@@ -1,0 +1,1542 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const HipoCalculaApp());
+}
+
+class HipoCalculaApp extends StatelessWidget {
+  const HipoCalculaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'HipoCalcula',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF10B981),
+          surface: Color(0xFF1E293B),
+        ),
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+// ===== MODELO DE INFORME GUARDADO =====
+class InformeGuardado {
+  final String fecha;
+  final String comunidad;
+  final double precioVivienda;
+  final double ahorrosTotal;
+  final String viviendaTipo;
+  final String perfilComprador;
+  final String gradoDiscapacidad;
+  final bool tieneAgencia;
+  final double agenciaPct;
+  final bool necesitaHipoteca;
+  final double hipotecaPct;
+  final double ingresosMensuales;
+  final double prestamosMensuales;
+  
+  // Datos calculados para acceso rápido en la lista
+  final double inversionTotal;
+  final double cuotaEstimada;
+  final double debtRatio;
+  final String viabilidadTitulo;
+
+  InformeGuardado({
+    required this.fecha,
+    required this.comunidad,
+    required this.precioVivienda,
+    required this.ahorrosTotal,
+    required this.viviendaTipo,
+    required this.perfilComprador,
+    required this.gradoDiscapacidad,
+    required this.tieneAgencia,
+    required this.agenciaPct,
+    required this.necesitaHipoteca,
+    required this.hipotecaPct,
+    required this.ingresosMensuales,
+    required this.prestamosMensuales,
+    required this.inversionTotal,
+    required this.cuotaEstimada,
+    required this.debtRatio,
+    required this.viabilidadTitulo,
+  });
+}
+
+// Lista global simulada para persistir los informes en memoria durante la sesión
+List<InformeGuardado> globalInformesGuardados = [];
+
+// ==========================================
+// PANTALLA DE INICIO (MENÚ PRINCIPAL)
+// ==========================================
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70.0),
+        child: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          elevation: 0,
+          toolbarHeight: 70.0,
+          title: Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: Color(0xFF10B981),
+                radius: 18,
+                child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                  Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('¿Qué deseas hacer hoy?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            
+            // Opcion 1: HipoCalcula
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WizardScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.calculate, color: Color(0xFF10B981), size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('HipoCalcula', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          SizedBox(height: 4),
+                          Text('Calcula tu hipoteca y los gastos correspondientes', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 16),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Opcion 2: Informes
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InformesListScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF334155), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.folder_shared, color: Color(0xFF38BDF8), size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Informes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          SizedBox(height: 4),
+                          Text('Consulta tus informes guardados', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// PANTALLA DE LISTADO DE INFORMES GUARDADOS
+// ==========================================
+class InformesListScreen extends StatefulWidget {
+  const InformesListScreen({super.key});
+
+  @override
+  State<InformesListScreen> createState() => _InformesListScreenState();
+}
+
+class _InformesListScreenState extends State<InformesListScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Color(0xFF10B981),
+              radius: 14,
+              child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+            const SizedBox(width: 8),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          ],
+        ),
+      ),
+      body: globalInformesGuardados.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.inbox, size: 64, color: Color(0xFF334155)),
+                  SizedBox(height: 16),
+                  Text('No hay informes guardados todavía', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: globalInformesGuardados.length,
+              itemBuilder: (context, index) {
+                final informe = globalInformesGuardados[index];
+                return Card(
+                  color: const Color(0xFF1E293B),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      // Al hacer clic, navega al informe detallado guardado[cite: 19]
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InformeDetalleScreen(informe: informe),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Inmueble: ${informe.precioVivienda.toInt()} €', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                              Chip(
+                                label: Text(informe.viabilidadTitulo, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                backgroundColor: informe.viabilidadTitulo.contains('ALTA') ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.redAccent.withValues(alpha: 0.2),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Región: ${informe.comunidad.toUpperCase()} | Fecha: ${informe.fecha}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                          const Divider(height: 20, color: Color(0xFF334155)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Inversión total: ${informe.inversionTotal.toInt()} €', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                              Text('Cuota: ${informe.cuotaEstimada.toInt()} €/mes', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ==========================================
+// PANTALLA DE DETALLE DE INFORME GUARDADO
+// ==========================================
+class InformeDetalleScreen extends StatelessWidget {
+  final InformeGuardado informe;
+
+  const InformeDetalleScreen({super.key, required this.informe});
+
+  double _calcularITPRateLocal() {
+    if (informe.viviendaTipo == 'nueva') return 0.115;
+    switch (informe.comunidad) {
+      case 'valencia':
+        if (informe.perfilComprador == 'joven') return informe.precioVivienda <= 180000 ? 0.06 : 0.08;
+        if (informe.perfilComprador == 'familia_numerosa') return 0.04;
+        if (informe.perfilComprador == 'discapacidad') return informe.gradoDiscapacidad == '65_mas' ? 0.03 : 0.04;
+        return 0.09;
+      case 'madrid':
+        if (informe.perfilComprador == 'joven' || informe.perfilComprador == 'familia_numerosa') return 0.04;
+        if (informe.perfilComprador == 'discapacidad') return 0.04;
+        return 0.06;
+      case 'andalucia':
+        if (informe.perfilComprador == 'joven' && informe.precioVivienda <= 150000) return 0.035;
+        if (informe.perfilComprador == 'familia_numerosa' || informe.perfilComprador == 'discapacidad') return 0.035;
+        return 0.07;
+      case 'cataluna':
+        if (informe.perfilComprador == 'joven' && informe.precioVivienda <= 200000) return 0.05;
+        if (informe.perfilComprador == 'familia_numerosa' || informe.perfilComprador == 'discapacidad') return 0.05;
+        return 0.10;
+      default:
+        return 0.08;
+    }
+  }
+
+  String _obtenerDetalleITPLocal(double rate) {
+    if (informe.viviendaTipo == 'nueva') return "Obra Nueva: IVA 10% + 1.5% AJD.";
+    if (informe.comunidad == 'valencia' && informe.perfilComprador == 'joven') {
+      return informe.precioVivienda <= 180000 
+          ? "C. Valenciana: ITP reducido del 6% para menor de 35 años (vivienda ≤180.000 €)."
+          : "C. Valenciana: ITP reducido del 8% para menor de 35 años (>180.000 €).";
+    }
+    return "Aplicado ITP regional del ${(rate * 100).toStringAsFixed(1)}% según perfil y C.A.";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double itpRate = _calcularITPRateLocal();
+    double impuestos = informe.precioVivienda * itpRate;
+    double gastosLegales = 2250;
+    double inmobiliaria = informe.tieneAgencia ? (informe.precioVivienda * (informe.agenciaPct / 100)) * 1.21 : 0;
+    double totalInversion = informe.precioVivienda + impuestos + gastosLegales + inmobiliaria;
+
+    bool ratioOk = informe.debtRatio <= 35;
+    bool ltvOk = informe.hipotecaPct <= 80;
+    double faltaAhorros80 = max(0, (informe.precioVivienda * (informe.hipotecaPct / 100)) - (informe.precioVivienda * 0.80));
+
+    Color viabilidadColor = informe.viabilidadTitulo.contains('ALTA') ? const Color(0xFF10B981) : Colors.redAccent;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Color(0xFF10B981),
+              radius: 14,
+              child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+            const SizedBox(width: 8),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                Text('Detalle de Informe Guardado', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Informe de Viabilidad', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: viabilidadColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: viabilidadColor),
+                  ),
+                  child: Text(informe.viabilidadTitulo, style: TextStyle(color: viabilidadColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('Guardado el ${informe.fecha} | Región: ${informe.comunidad.toUpperCase()}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+            const SizedBox(height: 20),
+
+            // Desglose de Inversión
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('DESGLOSE TOTAL DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                  const SizedBox(height: 12),
+                  _rowDetail('Precio de la vivienda', '${informe.precioVivienda.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €'),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Impuestos (${informe.viviendaTipo == 'segunda' ? 'ITP' : 'IVA+AJD'} ${(itpRate * 100).toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                      Text('${impuestos.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                    ),
+                    child: Text('ℹ️ ${_obtenerDetalleITPLocal(itpRate)}', style: const TextStyle(fontSize: 10, color: Color(0xFF34D399))),
+                  ),
+                  const SizedBox(height: 10),
+                  _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${gastosLegales.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF818CF8)),
+                  if (informe.tieneAgencia) ...[
+                    const SizedBox(height: 8),
+                    _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${inmobiliaria.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF06B6D4)),
+                  ],
+                  const Divider(height: 20, color: Color(0xFF334155)),
+                  _rowDetail('Inversión Global Necesaria', '${totalInversion.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', isTotal: true),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            if (informe.necesitaHipoteca)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                        Text('${informe.hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvOk ? const Color(0xFF10B981) : Colors.amber)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Stack(
+                      children: [
+                        Container(height: 12, decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(6))),
+                        FractionallySizedBox(
+                          widthFactor: (informe.hipotecaPct / 100).clamp(0.0, 1.0),
+                          child: Container(height: 12, decoration: BoxDecoration(color: ltvOk ? const Color(0xFF10B981) : Colors.amber, borderRadius: BorderRadius.circular(6))),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                        Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Colors.amber, fontWeight: FontWeight.bold)),
+                        Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16),
+
+            // Capacidad de Pago
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: ratioOk ? const Color(0xFF334155) : Colors.redAccent.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('CAPACIDAD DE PAGO (ENDEUDAMIENTO)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                      Text('${informe.debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioOk ? const Color(0xFF10B981) : Colors.redAccent)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Cuota hipoteca estimada: ${informe.cuotaEstimada.toInt()} €/mes.', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Tarjeta CTA Bróker
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF312E81), Color(0xFF0F172A)]),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                children: [
+                  const Text('¿Quieres conseguir esta hipoteca con mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  const SizedBox(height: 6),
+                  const Text('Un bróker hipotecario partner puede negociar tu perfil con los bancos sin coste inicial.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: const Color(0xFF0F172A),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rowDetail(String label, String value, {bool isTotal = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isTotal ? const Color(0xFF10B981) : Colors.white70, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, fontSize: isTotal ? 14 : 12)),
+          Text(value, style: TextStyle(color: isTotal ? const Color(0xFF10B981) : (color ?? Colors.white), fontWeight: isTotal ? FontWeight.w800 : FontWeight.bold, fontSize: isTotal ? 15 : 12)),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// ASISTENTE WIZARD (PASOS 1 AL 6)
+// ==========================================
+class WizardScreen extends StatefulWidget {
+  const WizardScreen({super.key});
+
+  @override
+  State<WizardScreen> createState() => _WizardScreenState();
+}
+
+class _WizardScreenState extends State<WizardScreen> {
+  int currentStep = 1;
+
+  String comunidad = 'valencia';
+  String viviendaTipo = 'segunda'; 
+  String perfilComprador = 'joven'; 
+  String gradoDiscapacidad = '33_64'; 
+  bool esVpo = false;
+  String vpoRegimen = 'general'; 
+  
+  double precioVivienda = 180000;
+  double ahorrosTotal = 45000;
+  
+  bool tieneAgencia = true;
+  double agenciaPct = 3.0;
+  
+  bool necesitaHipoteca = true;
+  double hipotecaPct = 80.0;
+  double ingresosMensuales = 2800;
+  double prestamosMensuales = 500;
+
+  void nextStep() {
+    setState(() {
+      if (currentStep < 6) currentStep++;
+    });
+  }
+
+  void prevStep() {
+    setState(() {
+      if (currentStep > 1) currentStep--;
+    });
+  }
+
+  void autoCalcularHipoteca() {
+    double itpRate = _obtenerITPRate();
+    double impuestos = precioVivienda * itpRate;
+    double gastosNotaria = precioVivienda < 150000 ? 1050 : (precioVivienda < 300000 ? 1500 : 2000);
+    double agenciaMonto = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
+    
+    double totalGastosCompra = impuestos + gastosNotaria + agenciaMonto;
+    double dineroUtilParaEntrada = max(0, ahorrosTotal - totalGastosCompra);
+    double hipotecaNecesaria = max(0, precioVivienda - dineroUtilParaEntrada);
+    
+    double pctResult = (hipotecaNecesaria / precioVivienda) * 100;
+    
+    setState(() {
+      hipotecaPct = pctResult.clamp(50.0, 100.0);
+    });
+  }
+
+  double _obtenerITPRate() {
+    if (viviendaTipo == 'nueva') {
+      return (esVpo && vpoRegimen == 'especial') ? 0.055 : 0.115;
+    }
+    
+    switch (comunidad) {
+      case 'valencia':
+        if (esVpo) return vpoRegimen == 'especial' ? 0.04 : 0.08;
+        if (perfilComprador == 'joven') return precioVivienda <= 180000 ? 0.06 : 0.08;
+        if (perfilComprador == 'familia_numerosa') return 0.04;
+        if (perfilComprador == 'discapacidad') return gradoDiscapacidad == '65_mas' ? 0.03 : 0.04;
+        return 0.09;
+      case 'madrid':
+        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || esVpo) return 0.04;
+        if (perfilComprador == 'discapacidad') return 0.04;
+        return 0.06;
+      case 'andalucia':
+        if (perfilComprador == 'joven' && precioVivienda <= 150000) return 0.035;
+        if (perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.035;
+        return 0.07;
+      case 'cataluna':
+        if (perfilComprador == 'joven' && precioVivienda <= 200000) return 0.05;
+        if (perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.05;
+        return 0.10;
+      case 'galicia':
+      case 'castilla_leon':
+        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.05;
+        return 0.08;
+      case 'canarias':
+        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.04;
+        return 0.065;
+      case 'murcia':
+        if (perfilComprador == 'joven') return 0.03;
+        if (perfilComprador == 'discapacidad') return 0.04;
+        return 0.08;
+      case 'pais_vasco':
+        return 0.04;
+      case 'navarra':
+        return 0.06;
+      case 'rioja':
+        if (perfilComprador == 'joven' || perfilComprador == 'discapacidad') return 0.05;
+        return 0.07;
+      default:
+        return 0.08;
+    }
+  }
+
+  String _obtenerDetalleITP(double rate) {
+    if (viviendaTipo == 'nueva') {
+      return "Obra Nueva: IVA 10% (o 4% VPO Esp.) + 1.5% AJD.";
+    }
+    if (comunidad == 'valencia') {
+      if (perfilComprador == 'joven') {
+        if (precioVivienda <= 180000) {
+          return "C. Valenciana: ITP reducido del 6% para menor de 35 años (vivienda ≤180.000 €).";
+        }
+        return "C. Valenciana: ITP reducido del 8% para menor de 35 años (>180.000 €).";
+      }
+      if (perfilComprador == 'familia_numerosa') return "C. Valenciana: ITP bonificado del 4% para familia numerosa.";
+      if (perfilComprador == 'discapacidad') return "C. Valenciana: ITP bonificado por grado de discapacidad.";
+    }
+    return "Aplicado ITP regional del ${(rate * 100).toStringAsFixed(1)}% según perfil y C.A.";
+  }
+
+  void guardarInformeActual() {
+    double itpRate = _obtenerITPRate();
+    double impuestos = precioVivienda * itpRate;
+    double gastosLegales = 2250;
+    double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
+    double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
+    double hipotecaMonto = necesitaHipoteca ? precioVivienda * (hipotecaPct / 100) : 0;
+    
+    double cuotaEstimada = 0;
+    if (hipotecaMonto > 0) {
+      double r = 0.035 / 12;
+      double n = 360;
+      cuotaEstimada = hipotecaMonto * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
+    }
+    double totalDeudas = cuotaEstimada + prestamosMensuales;
+    double debtRatio = ingresosMensuales > 0 ? (totalDeudas / ingresosMensuales) * 100 : 0;
+
+    String viabilidadTitulo = debtRatio <= 35 ? "VIABILIDAD ALTA" : "RIESGO ALTO";
+
+    final now = DateTime.now();
+    final fechaStr = "${now.day}/${now.month}/${now.year}";
+
+    globalInformesGuardados.add(InformeGuardado(
+      fecha: fechaStr,
+      comunidad: comunidad,
+      precioVivienda: precioVivienda,
+      ahorrosTotal: ahorrosTotal,
+      viviendaTipo: viviendaTipo,
+      perfilComprador: perfilComprador,
+      gradoDiscapacidad: gradoDiscapacidad,
+      tieneAgencia: tieneAgencia,
+      agenciaPct: agenciaPct,
+      necesitaHipoteca: necesitaHipoteca,
+      hipotecaPct: hipotecaPct,
+      ingresosMensuales: ingresosMensuales,
+      prestamosMensuales: prestamosMensuales,
+      inversionTotal: totalInversion,
+      cuotaEstimada: cuotaEstimada,
+      debtRatio: debtRatio,
+      viabilidadTitulo: viabilidadTitulo,
+    ));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✨ ¡Informe guardado con éxito!'),
+        backgroundColor: Color(0xFF10B981),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Color(0xFF10B981),
+              radius: 14,
+              child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+            const SizedBox(width: 8),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Chip(
+              label: Text(
+                currentStep <= 5 ? 'Paso $currentStep de 5' : 'Informe Final ⭐️',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+              ),
+              backgroundColor: const Color(0xFF1E293B),
+            ),
+          )
+        ],
+      ),
+      body: Column(
+        children: [
+          LinearProgressIndicator(
+            value: currentStep / 6.0,
+            backgroundColor: const Color(0xFF1E293B),
+            color: const Color(0xFF10B981),
+            minHeight: 4,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: _buildCurrentStepView(),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            color: const Color(0xFF1E293B),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (currentStep > 1)
+                  OutlinedButton(
+                    onPressed: prevStep,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Anterior'),
+                  )
+                else
+                  const SizedBox.shrink(),
+                
+                if (currentStep < 6)
+                  ElevatedButton(
+                    onPressed: nextStep,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: const Color(0xFF0F172A),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Siguiente ➔', style: TextStyle(fontWeight: FontWeight.bold)),
+                  )
+                else
+                  ElevatedButton.icon(
+                    onPressed: guardarInformeActual,
+                    icon: const Icon(Icons.bookmark_add, size: 18),
+                    label: const Text('Guardar informe', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF38BDF8),
+                      foregroundColor: const Color(0xFF0F172A),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentStepView() {
+    switch (currentStep) {
+      case 1: return _buildStep1();
+      case 2: return _buildStep2();
+      case 3: return _buildStep3();
+      case 4: return _buildStep4();
+      case 5: return _buildStep5();
+      case 6: return _buildStep6Results();
+      default: return _buildStep1();
+    }
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('¿Dónde vas a comprar?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Selecciona la Comunidad Autónoma para aplicar automáticamente la fiscalidad correspondiente (ITP / AJD).', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 20),
+        const Text('COMUNIDAD AUTÓNOMA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: comunidad,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1E293B),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF334155))),
+          ),
+          dropdownColor: const Color(0xFF1E293B),
+          items: const [
+            DropdownMenuItem(value: 'andalucia', child: Text('Andalucía')),
+            DropdownMenuItem(value: 'aragon', child: Text('Aragón')),
+            DropdownMenuItem(value: 'asturias', child: Text('Asturias')),
+            DropdownMenuItem(value: 'baleares', child: Text('Islas Baleares')),
+            DropdownMenuItem(value: 'canarias', child: Text('Canarias')),
+            DropdownMenuItem(value: 'cantabria', child: Text('Cantabria')),
+            DropdownMenuItem(value: 'castilla_la_mancha', child: Text('Castilla-La Mancha')),
+            DropdownMenuItem(value: 'castilla_leon', child: Text('Castilla y León')),
+            DropdownMenuItem(value: 'cataluna', child: Text('Cataluña')),
+            DropdownMenuItem(value: 'extremadura', child: Text('Extremadura')),
+            DropdownMenuItem(value: 'galicia', child: Text('Galicia')),
+            DropdownMenuItem(value: 'madrid', child: Text('Comunidad de Madrid')),
+            DropdownMenuItem(value: 'murcia', child: Text('Región de Murcia')),
+            DropdownMenuItem(value: 'navarra', child: Text('Navarra')),
+            DropdownMenuItem(value: 'pais_vasco', child: Text('País Vasco')),
+            DropdownMenuItem(value: 'rioja', child: Text('La Rioja')),
+            DropdownMenuItem(value: 'valencia', child: Text('Comunidad Valenciana')),
+          ],
+          onChanged: (val) => setState(() => comunidad = val!),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.location_pin, color: Color(0xFFEC4899), size: 20),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Los impuestos de compraventa (ITP) varían según la región y las bonificaciones por edad o tipo de inmueble.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Tipo de Vivienda y Perfil', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Identifica el estado de la vivienda y tu perfil comprador.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => viviendaTipo = 'segunda'),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('🏷️', style: TextStyle(fontSize: 22)),
+                      const SizedBox(height: 12),
+                      const Text('Segunda Mano', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('Gasto de Impuesto de Transmisiones Patrimoniales (ITP)', style: TextStyle(fontSize: 12, color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => viviendaTipo = 'nueva'),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('🏗️', style: TextStyle(fontSize: 22)),
+                      const SizedBox(height: 12),
+                      const Text('Obra Nueva', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('Gasto de IVA 10% + Impuesto por escritura (AJD)', style: TextStyle(fontSize: 12, color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        const Text('PERFIL DEL COMPRADOR (BONIFICACIONES)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: perfilComprador,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1E293B),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF334155))),
+          ),
+          dropdownColor: const Color(0xFF1E293B),
+          items: const [
+            DropdownMenuItem(value: 'general', child: Text('Perfil General / Mayor de 35 años')),
+            DropdownMenuItem(value: 'joven', child: Text('Menor de 35 años')),
+            DropdownMenuItem(value: 'familia_numerosa', child: Text('Familia numerosa (3 hijos o +)')),
+            DropdownMenuItem(value: 'discapacidad', child: Text('Persona con Discapacidad')),
+          ],
+          onChanged: (val) => setState(() => perfilComprador = val!),
+        ),
+        if (perfilComprador == 'discapacidad') ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF10B981)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Grado de Discapacidad', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: gradoDiscapacidad,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  dropdownColor: const Color(0xFF0F172A),
+                  items: const [
+                    DropdownMenuItem(value: '33_64', child: Text('Igual o superior al 33% (y menor de 65%)')),
+                    DropdownMenuItem(value: '65_mas', child: Text('Igual o superior al 65%')),
+                  ],
+                  onChanged: (val) => setState(() => gradoDiscapacidad = val!),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStep3() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Precio y Ahorros', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Valores económicos base para calcular impuestos e hipoteca.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 24),
+        TextFormField(
+          initialValue: precioVivienda.toInt().toString(),
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: '¿CUÁNTO CUESTA LA VIVIENDA?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          onChanged: (val) => precioVivienda = double.tryParse(val) ?? 0,
+        ),
+        const SizedBox(height: 20),
+        TextFormField(
+          initialValue: ahorrosTotal.toInt().toString(),
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: '¿CUÁNTO TIENES AHORRADO?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          onChanged: (val) => ahorrosTotal = double.tryParse(val) ?? 0,
+        ),
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4.0),
+          child: Text(
+            'Total disponible para destinar a la entrada y los gastos de compra.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep4() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Comisión de Inmobiliaria', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Indica si la compraventa involucra honorarios de agencia.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => tieneAgencia = true),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: tieneAgencia ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Sí hay inmobiliaria', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => tieneAgencia = false),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: !tieneAgencia ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Sin inmobiliaria', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (tieneAgencia) ...[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('COMISIÓN DE INMOBILIARIA (%)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.0),
+                        child: Text('%', style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      Expanded(
+                        child: TextFormField(
+                          key: ValueKey(agenciaPct),
+                          initialValue: agenciaPct.toString(),
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 12)),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          onChanged: (v) => setState(() => agenciaPct = double.tryParse(v) ?? 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Se calculará el porcentaje indicado de comisión al precio total de la vivienda y se le añadirá automáticamente el 21% de IVA correspondiente.',
+                        style: TextStyle(fontSize: 11, color: const Color(0xFF10B981), height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStep5() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Financiación e Ingresos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('Ajusta los detalles de tu préstamo e ingresos mensuales.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => necesitaHipoteca = true),
+                child: Container(
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: necesitaHipoteca ? const Color(0xFF10B981) : const Color(0xFF334155), width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Necesito Hipoteca', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => necesitaHipoteca = false),
+                child: Container(
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: !necesitaHipoteca ? const Color(0xFF10B981) : const Color(0xFF334155), width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Compra al Contado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (necesitaHipoteca) ...[
+          const SizedBox(height: 25),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(16)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Porcentaje de Hipoteca', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text('${hipotecaPct.toInt()}%', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF10B981))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: autoCalcularHipoteca,
+                  icon: const Icon(Icons.auto_awesome, size: 16),
+                  label: const Text('¿No sabes qué % necesitas? Calcúlalo según tus ahorros', style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: const Color(0xFF10B981)),
+                ),
+                Slider(
+                  value: hipotecaPct,
+                  min: 0,
+                  max: 100,
+                  divisions: 100,
+                  activeColor: const Color(0xFF10B981),
+                  onChanged: (val) => setState(() => hipotecaPct = val),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _buildNumberInput('Ingresos mes (Titulares)', ingresosMensuales, (val) => setState(() => ingresosMensuales = val), 100),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildNumberInput('Otros préstamos/mes', prestamosMensuales, (val) => setState(() => prestamosMensuales = val), 50),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumberInput(String title, double val, Function(double) onChanged, double step) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF334155))),
+          child: Row(
+            children: [
+              const Padding(padding: EdgeInsets.only(left: 12.0), child: Text('€', style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+              Expanded(
+                child: TextFormField(
+                  key: ValueKey(val),
+                  initialValue: val.toInt().toString(),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  onChanged: (v) => onChanged(double.tryParse(v) ?? 0),
+                ),
+              ),
+              Column(
+                children: [
+                  InkWell(onTap: () => onChanged(val + step), child: const Icon(Icons.keyboard_arrow_up, size: 18, color: Color(0xFF94A3B8))),
+                  InkWell(onTap: () => onChanged(max(0, val - step)), child: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF94A3B8))),
+                ],
+              ),
+              const SizedBox(width: 6),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep6Results() {
+    double itpRate = _obtenerITPRate();
+    double impuestos = precioVivienda * itpRate;
+    double gastosLegales = 2250;
+    double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
+    double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
+
+    double hipotecaMonto = necesitaHipoteca ? precioVivienda * (hipotecaPct / 100) : 0;
+    
+    double cuotaEstimada = 0;
+    if (hipotecaMonto > 0) {
+      double r = 0.035 / 12;
+      double n = 360;
+      cuotaEstimada = hipotecaMonto * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
+    }
+    
+    double totalDeudas = cuotaEstimada + prestamosMensuales;
+    double debtRatio = ingresosMensuales > 0 ? (totalDeudas / ingresosMensuales) * 100 : 0;
+
+    bool ratioOk = debtRatio <= 35;
+    bool ltvOk = hipotecaPct <= 80;
+
+    String viabilidadTitulo = "VIABILIDAD ALTA";
+    Color viabilidadColor = const Color(0xFF10B981);
+    String viabilidadMsg = "🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.";
+
+    if (!ratioOk) {
+      viabilidadTitulo = "RIESGO ALTO";
+      viabilidadColor = Colors.redAccent;
+      viabilidadMsg = "🔴 Riesgo de Endeudamiento: Tu ratio (${debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.";
+    } else if (!ltvOk) {
+      viabilidadTitulo = "VIABILIDAD MEDIA";
+      viabilidadColor = Colors.amber;
+      viabilidadMsg = "🟡 Viabilidad Media: Tu cuota mensual está dentro de tus ingresos, pero al solicitar más del 80% LTV requerirás mayor aportación de ahorros.";
+    }
+
+    String detalleItpTexto = _obtenerDetalleITP(itpRate);
+    double faltaAhorros80 = max(0, hipotecaMonto - (precioVivienda * 0.80));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Informe de Viabilidad', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: viabilidadColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: viabilidadColor),
+              ),
+              child: Text(viabilidadTitulo, style: TextStyle(color: viabilidadColor, fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text('Resultado integral de tu operación de compra.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 20),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('DESGLOSE TOTAL DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              const SizedBox(height: 12),
+              _rowDetail('Precio de la vivienda', '${precioVivienda.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €'),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Impuestos (${viviendaTipo == 'segunda' ? 'ITP' : 'IVA+AJD'} ${(itpRate * 100).toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text('${impuestos.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                ),
+                child: Text('ℹ️ $detalleItpTexto', style: const TextStyle(fontSize: 10, color: Color(0xFF34D399))),
+              ),
+              const SizedBox(height: 10),
+              _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${gastosLegales.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF818CF8)),
+              if (tieneAgencia) ...[
+                const SizedBox(height: 8),
+                _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${inmobiliaria.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF06B6D4)),
+              ],
+              const Divider(height: 20, color: Color(0xFF334155)),
+              _rowDetail('Inversión Global Necesaria', '${totalInversion.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', isTotal: true),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        if (necesitaHipoteca)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text('${hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvOk ? const Color(0xFF10B981) : Colors.amber)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Stack(
+                  children: [
+                    Container(height: 12, decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(6))),
+                    FractionallySizedBox(
+                      widthFactor: (hipotecaPct / 100).clamp(0.0, 1.0),
+                      child: Container(height: 12, decoration: BoxDecoration(color: ltvOk ? const Color(0xFF10B981) : Colors.amber, borderRadius: BorderRadius.circular(6))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                    Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Colors.amber, fontWeight: FontWeight.bold)),
+                    Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 16),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: ratioOk ? const Color(0xFF334155) : Colors.redAccent.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('CAPACIDAD DE PAGO (ENDEUDAMIENTO)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                  Text('${debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioOk ? const Color(0xFF10B981) : Colors.redAccent)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text('Cuota hipoteca estimada: ${cuotaEstimada.toInt()} €/mes.', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Tarjeta CTA Bróker (Añadida de nuevo en el Paso 6)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF312E81), Color(0xFF0F172A)]),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            children: [
+              const Text('¿Quieres conseguir esta hipoteca con mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+              const SizedBox(height: 6),
+              const Text('Un bróker hipotecario partner puede negociar tu perfil con los bancos sin coste inicial.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _rowDetail(String label, String value, {bool isTotal = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isTotal ? const Color(0xFF10B981) : Colors.white70, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, fontSize: isTotal ? 14 : 12)),
+          Text(value, style: TextStyle(color: isTotal ? const Color(0xFF10B981) : (color ?? Colors.white), fontWeight: isTotal ? FontWeight.w800 : FontWeight.bold, fontSize: isTotal ? 15 : 12)),
+        ],
+      ),
+    );
+  }
+}
