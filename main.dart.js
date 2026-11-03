@@ -41079,11 +41079,11 @@ k===$&&A.a()
 k=k==="habitual"
 s=A.c1(k?B.z:B.an,2)
 r=t.p
-l=A.e7(A.eF(m,A.bo(m,A.c2(A.c([B.X5,B.b4,B.Xa,B.bG,A.b8("Aplica bonificaciones ITP/AJD",m,m,m,A.cb(m,m,k?B.z:B.aL,m,m,m,m,m,m,m,m,10,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m)],r),B.G,B.u,B.p),B.m,m,m,new A.b4(B.U,m,s,l,m,m,B.w),m,m,m,B.hl,m,m,m),B.a5,!1,m,m,m,m,m,m,m,m,m,m,m,m,m,m,new A.anS(n),m,m,m,m,m,m))
+l=A.e7(A.eF(m,A.bo(m,A.c2(A.c([B.X5,B.b4,B.Xa,B.bG,A.b8("Aplica bonificaciones a ITP/AJD",m,m,m,A.cb(m,m,k?B.z:B.aL,m,m,m,m,m,m,m,m,10,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m)],r),B.G,B.u,B.p),B.m,m,m,new A.b4(B.U,m,s,l,m,m,B.w),m,m,m,B.hl,m,m,m),B.a5,!1,m,m,m,m,m,m,m,m,m,m,m,m,m,m,new A.anS(n),m,m,m,m,m,m))
 s=A.ba(16)
 k=n.r==="segunda"
 q=A.c1(k?B.bZ:B.an,2)
-l=A.bU(A.c([l,B.ft,A.e7(A.eF(m,A.bo(m,A.c2(A.c([B.X9,B.b4,B.X0,B.bG,A.b8("Tipo general sin bonificaci\xf3n",m,m,m,A.cb(m,m,k?B.bZ:B.aL,m,m,m,m,m,m,m,m,10,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m)],r),B.G,B.u,B.p),B.m,m,m,new A.b4(B.U,m,q,s,m,m,B.w),m,m,m,B.hl,m,m,m),B.a5,!1,m,m,m,m,m,m,m,m,m,m,m,m,m,m,new A.anT(n),m,m,m,m,m,m))],r),B.dz,B.u,B.p,0)
+l=A.bU(A.c([l,B.ft,A.e7(A.eF(m,A.bo(m,A.c2(A.c([B.X9,B.b4,B.X0,B.bG,A.b8("Tipo general sin bonificaci\xf3n sobre ITP/AJD",m,m,m,A.cb(m,m,k?B.bZ:B.aL,m,m,m,m,m,m,m,m,10,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m)],r),B.G,B.u,B.p),B.m,m,m,new A.b4(B.U,m,q,s,m,m,B.w),m,m,m,B.hl,m,m,m),B.a5,!1,m,m,m,m,m,m,m,m,m,m,m,m,m,m,new A.anT(n),m,m,m,m,m,m))],r),B.dz,B.u,B.p,0)
 s=A.ba(16)
 k=n.f
 k===$&&A.a()
