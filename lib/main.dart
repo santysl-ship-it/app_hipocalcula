@@ -5,26 +5,6 @@ void main() {
   runApp(const HipoCalculaApp());
 }
 
-class HipoCalculaApp extends StatelessWidget {
-  const HipoCalculaApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HipoCalcula',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF10B981),
-          surface: Color(0xFF1E293B),
-        ),
-      ),
-      home: const HomeScreen(),
-    );
-  }
-}
-
 // ===== MODELO DE INFORME GUARDADO =====
 class InformeGuardado {
   final String fecha;
@@ -32,7 +12,7 @@ class InformeGuardado {
   final double precioVivienda;
   final double ahorrosTotal;
   final String viviendaTipo;
-  final String viviendaUso; // 'habitual' o 'segunda'
+  final String viviendaUso; 
   final String perfilComprador;
   final String gradoDiscapacidad;
   final bool tieneAgencia;
@@ -43,7 +23,6 @@ class InformeGuardado {
   final double prestamosMensuales;
   final bool esContado;
   
-  // Datos calculados para acceso rápido en la lista
   final double inversionTotal;
   final double cuotaEstimada;
   final double debtRatio;
@@ -72,8 +51,27 @@ class InformeGuardado {
   });
 }
 
-// Lista global simulada para persistir los informes en memoria durante la sesión
 List<InformeGuardado> globalInformesGuardados = [];
+
+class HipoCalculaApp extends StatelessWidget {
+  const HipoCalculaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'HipoCalcula',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF10B981),
+          surface: Color(0xFF1E293B),
+        ),
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
 
 // ==========================================
 // PANTALLA DE INICIO (MENÚ PRINCIPAL)
@@ -90,6 +88,7 @@ class HomeScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF0F172A),
           elevation: 0,
           toolbarHeight: 70.0,
+          titleSpacing: 8,
           title: Row(
             children: [
               const CircleAvatar(
@@ -97,15 +96,17 @@ class HomeScreen extends StatelessWidget {
                 radius: 18,
                 child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-                  Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                ],
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                    Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
             ],
           ),
@@ -160,7 +161,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Opcion 2: Compra al contado (Usando emoji 💼 garantizado al 100% visible)
+            // Opcion 2: Compra al contado
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -229,7 +230,7 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           Text('Informes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                           SizedBox(height: 4),
-                          Text('Consulta tus informes guardados', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                          Text('Consulta tus informes guardados (Máx. 4)', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                         ],
                       ),
                     ),
@@ -262,6 +263,7 @@ class _InformesListScreenState extends State<InformesListScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        titleSpacing: 0,
         title: Row(
           children: [
             const CircleAvatar(
@@ -270,14 +272,16 @@ class _InformesListScreenState extends State<InformesListScreen> {
               child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                  Text('Informes Guardados (${globalInformesGuardados.length}/4)', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ],
         ),
@@ -322,24 +326,61 @@ class _InformesListScreenState extends State<InformesListScreen> {
                             children: [
                               Text('Inmueble: ${informe.precioVivienda.toInt()} €', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
                               Chip(
-                                label: Text(informe.esContado ? 'AL CONTADO' : informe.viabilidadTitulo, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                label: Text(informe.esContado ? 'AL CONTADO' : informe.viabilidadTitulo, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
                                 backgroundColor: informe.esContado
                                     ? const Color(0xFF818CF8).withValues(alpha: 0.2)
                                     : (informe.viabilidadTitulo.contains('ALTA') ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.redAccent.withValues(alpha: 0.2)),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text('Región: ${informe.comunidad.toUpperCase()} | ${informe.viviendaUso == 'habitual' ? 'V. Habitual' : 'Segunda Res.'}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                          const Divider(height: 20, color: Color(0xFF334155)),
+                          const Divider(height: 16, color: Color(0xFF334155)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('Inversión total: ${informe.inversionTotal.toInt()} €', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                              if (!informe.esContado)
-                                Text('Cuota: ${informe.cuotaEstimada.toInt()} €/mes', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)))
-                              else
-                                const Text('Sin Hipoteca', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF818CF8))),
+                              Row(
+                                children: [
+                                  // Botón de Modificar (Lápiz)
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF38BDF8), padding: EdgeInsets.zero),
+                                    icon: const Icon(Icons.edit, size: 16),
+                                    label: const Text('Modificar', style: TextStyle(fontSize: 12)),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => WizardScreen(
+                                            modoContado: informe.esContado,
+                                            informeAEditar: informe,
+                                            indiceEdicion: index,
+                                          ),
+                                        ),
+                                      ).then((_) => setState(() {}));
+                                    },
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Botón de Borrar (Papelera) añadido aquí
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(foregroundColor: Colors.redAccent, padding: EdgeInsets.zero),
+                                    icon: const Icon(Icons.delete_outline, size: 16),
+                                    label: const Text('Borrar', style: TextStyle(fontSize: 12)),
+                                    onPressed: () {
+                                      setState(() {
+                                        globalInformesGuardados.removeAt(index);
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('🗑️ Informe eliminado correctamente.'),
+                                          backgroundColor: Colors.redAccent,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ],
@@ -442,6 +483,7 @@ class InformeDetalleScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        titleSpacing: 0,
         title: Row(
           children: [
             const CircleAvatar(
@@ -450,14 +492,16 @@ class InformeDetalleScreen extends StatelessWidget {
               child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                Text('Detalle de Informe Guardado', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-              ],
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('HipoCalcula', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                  Text('Detalle de Informe Guardado', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ],
         ),
@@ -534,7 +578,6 @@ class InformeDetalleScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             if (!informe.esContado) ...[
-              // Financiación Hipotecaria (LTV)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -583,37 +626,8 @@ class InformeDetalleScreen extends StatelessWidget {
                               child: Container(height: 12, decoration: BoxDecoration(color: ltvColor)),
                             ),
                           ),
-                          Positioned.fill(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                double markerPosition = constraints.maxWidth * 0.80;
-                                return Stack(
-                                  children: [
-                                    Positioned(
-                                      left: markerPosition - 1.5,
-                                      top: 0,
-                                      bottom: 0,
-                                      child: Container(
-                                        width: 3,
-                                        color: const Color(0xFFD97706),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                        Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
-                        Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                      ],
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -630,14 +644,11 @@ class InformeDetalleScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 11, color: ltvColor, height: 1.4),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ltvColor)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Capacidad de Pago
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -672,14 +683,11 @@ class InformeDetalleScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ratioColor)),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Tarjeta CTA Bróker
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -689,7 +697,7 @@ class InformeDetalleScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Text('¿Quieres conseguir esta hipoteca con mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    const Text('¿Quieres conseguir una hipoteca con las mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
                     const SizedBox(height: 6),
                     const Text('Un bróker hipotecario partner puede negociar tu perfil con los bancos sin coste inicial.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                     const SizedBox(height: 12),
@@ -735,8 +743,15 @@ class InformeDetalleScreen extends StatelessWidget {
 // ==========================================
 class WizardScreen extends StatefulWidget {
   final bool modoContado;
+  final InformeGuardado? informeAEditar;
+  final int? indiceEdicion;
 
-  const WizardScreen({super.key, required this.modoContado});
+  const WizardScreen({
+    super.key,
+    required this.modoContado,
+    this.informeAEditar,
+    this.indiceEdicion,
+  });
 
   @override
   State<WizardScreen> createState() => _WizardScreenState();
@@ -745,22 +760,53 @@ class WizardScreen extends StatefulWidget {
 class _WizardScreenState extends State<WizardScreen> {
   int currentStep = 1;
 
-  String comunidad = 'valencia';
-  String viviendaTipo = 'segunda'; 
-  String viviendaUso = 'habitual'; // 'habitual' o 'segunda'
-  String perfilComprador = 'joven'; 
-  String gradoDiscapacidad = '33_64'; 
+  late String comunidad;
+  late String viviendaTipo; 
+  late String viviendaUso; 
+  late String perfilComprador; 
+  late String gradoDiscapacidad; 
   bool esVpo = false;
   String vpoRegimen = 'general'; 
   
-  double precioVivienda = 180000;
-  double ahorrosTotal = 45000;
+  late double precioVivienda;
+  late double ahorrosTotal;
   
-  bool tieneAgencia = true;
-  double agenciaPct = 3.0;
+  late bool tieneAgencia;
+  late double agenciaPct;
   
-  double ingresosMensuales = 2800;
-  double prestamosMensuales = 500;
+  late double ingresosMensuales;
+  late double prestamosMensuales;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.informeAEditar != null) {
+      final inf = widget.informeAEditar!;
+      comunidad = inf.comunidad;
+      viviendaTipo = inf.viviendaTipo;
+      viviendaUso = inf.viviendaUso;
+      perfilComprador = inf.perfilComprador;
+      gradoDiscapacidad = inf.gradoDiscapacidad;
+      precioVivienda = inf.precioVivienda;
+      ahorrosTotal = inf.ahorrosTotal;
+      tieneAgencia = inf.tieneAgencia;
+      agenciaPct = inf.agenciaPct;
+      ingresosMensuales = inf.ingresosMensuales;
+      prestamosMensuales = inf.prestamosMensuales;
+    } else {
+      comunidad = 'valencia';
+      viviendaTipo = 'segunda'; 
+      viviendaUso = 'habitual'; 
+      perfilComprador = 'joven'; 
+      gradoDiscapacidad = '33_64'; 
+      precioVivienda = 180000;
+      ahorrosTotal = 45000;
+      tieneAgencia = true;
+      agenciaPct = 3.0;
+      ingresosMensuales = 2800;
+      prestamosMensuales = 500;
+    }
+  }
 
   int get maxSteps => widget.modoContado ? 4 : 6;
 
@@ -832,50 +878,35 @@ class _WizardScreenState extends State<WizardScreen> {
         if (perfilComprador == 'joven' && precioVivienda <= 200000) return 0.05;
         if (perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.05;
         return 0.10;
-      case 'galicia':
-      case 'castilla_leon':
-        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.05;
-        return 0.08;
-      case 'canarias':
-        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || perfilComprador == 'discapacidad') return 0.04;
-        return 0.065;
-      case 'murcia':
-        if (perfilComprador == 'joven') return 0.03;
-        if (perfilComprador == 'discapacidad') return 0.04;
-        return 0.08;
-      case 'pais_vasco':
-        return 0.04;
-      case 'navarra':
-        return 0.06;
-      case 'rioja':
-        if (perfilComprador == 'joven' || perfilComprador == 'discapacidad') return 0.05;
-        return 0.07;
       default:
         return 0.08;
     }
   }
 
   String _obtenerDetalleITP(double rate) {
-    if (viviendaTipo == 'nueva') {
-      return "Obra Nueva: IVA 10% (o 4% VPO Esp.) + 1.5% AJD.";
-    }
-    if (viviendaUso == 'segunda') {
-      return "Segunda Residencia / Inversión: Tipo general del ${(rate * 100).toStringAsFixed(1)}% sin bonificaciones.";
-    }
-    if (comunidad == 'valencia') {
-      if (perfilComprador == 'joven') {
-        if (precioVivienda <= 180000) {
-          return "C. Valenciana: ITP reducido del 6% para menor de 35 años (vivienda ≤180.000 €).";
-        }
-        return "C. Valenciana: ITP reducido del 8% para menor de 35 años (>180.000 €).";
-      }
-      if (perfilComprador == 'familia_numerosa') return "C. Valenciana: ITP bonificado del 4% para familia numerosa.";
-      if (perfilComprador == 'discapacidad') return "C. Valenciana: ITP bonificado por grado de discapacidad.";
+    if (viviendaTipo == 'nueva') return "Obra Nueva: IVA 10% + 1.5% AJD.";
+    if (viviendaUso == 'segunda') return "Segunda Residencia: Tipo general del ${(rate * 100).toStringAsFixed(1)}% sin bonificaciones.";
+    
+    if (comunidad == 'valencia' && perfilComprador == 'joven') {
+      return precioVivienda <= 180000 
+          ? "C. Valenciana: ITP reducido del 6% para menor de 35 años (vivienda ≤180.000 €)."
+          : "C. Valenciana: ITP reducido del 8% para menor de 35 años (>180.000 €).";
     }
     return "Aplicado ITP regional del ${(rate * 100).toStringAsFixed(1)}% según perfil y C.A.";
   }
 
   void guardarInformeActual() {
+    if (widget.informeAEditar == null && globalInformesGuardados.length >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Has alcanzado el límite máximo de 4 informes guardados.'),
+          backgroundColor: Colors.amber,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     double itpRate = _obtenerITPRate();
     double impuestos = precioVivienda * itpRate;
     double gastosLegales = 2250;
@@ -899,7 +930,7 @@ class _WizardScreenState extends State<WizardScreen> {
     final now = DateTime.now();
     final fechaStr = "${now.day}/${now.month}/${now.year}";
 
-    globalInformesGuardados.add(InformeGuardado(
+    final nuevoInforme = InformeGuardado(
       fecha: fechaStr,
       comunidad: comunidad,
       precioVivienda: precioVivienda,
@@ -919,7 +950,13 @@ class _WizardScreenState extends State<WizardScreen> {
       debtRatio: debtRatio,
       viabilidadTitulo: viabilidadTitulo,
       esContado: widget.modoContado,
-    ));
+    );
+
+    if (widget.informeAEditar != null && widget.indiceEdicion != null) {
+      globalInformesGuardados[widget.indiceEdicion!] = nuevoInforme;
+    } else {
+      globalInformesGuardados.add(nuevoInforme);
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -928,6 +965,7 @@ class _WizardScreenState extends State<WizardScreen> {
         duration: Duration(seconds: 2),
       ),
     );
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -938,6 +976,7 @@ class _WizardScreenState extends State<WizardScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        titleSpacing: 0,
         title: Row(
           children: [
             const CircleAvatar(
@@ -946,14 +985,16 @@ class _WizardScreenState extends State<WizardScreen> {
               child: Text('H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(widget.modoContado ? 'Compra al contado' : 'Hipoteca y gastos', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                const Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(widget.modoContado ? 'Compra al contado' : 'Hipoteca y gastos', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                  const Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ],
         ),
@@ -963,7 +1004,7 @@ class _WizardScreenState extends State<WizardScreen> {
             child: Chip(
               label: Text(
                 currentStep <= totalPasosConfig ? 'Paso $currentStep de $totalPasosConfig' : 'Informe Final ⭐️',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
               ),
               backgroundColor: const Color(0xFF1E293B),
             ),
@@ -1018,7 +1059,7 @@ class _WizardScreenState extends State<WizardScreen> {
                   ElevatedButton.icon(
                     onPressed: guardarInformeActual,
                     icon: const Icon(Icons.bookmark_add, size: 18),
-                    label: const Text('Guardar informe', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(widget.informeAEditar != null ? 'Actualizar informe' : 'Guardar informe', style: const TextStyle(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF38BDF8),
                       foregroundColor: const Color(0xFF0F172A),
@@ -1095,31 +1136,6 @@ class _WizardScreenState extends State<WizardScreen> {
           ],
           onChanged: (val) => setState(() => comunidad = val!),
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF334155)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.location_pin, color: Color(0xFFEC4899), size: 20),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Text(
-                  'Los impuestos de compraventa (ITP) varían según la región y las bonificaciones por edad o tipo de inmueble.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -1135,123 +1151,129 @@ class _WizardScreenState extends State<WizardScreen> {
         
         const Text('USO DE LA VIVIENDA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => viviendaUso = 'habitual'),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: viviendaUso == 'habitual' ? const Color(0xFF10B981) : const Color(0xFF334155),
-                      width: 2,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => viviendaUso = 'habitual'),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: viviendaUso == 'habitual' ? const Color(0xFF10B981) : const Color(0xFF334155),
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('🏠', style: TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      const Text('Vivienda Habitual', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('Aplica bonificaciones ITP/AJD', style: TextStyle(fontSize: 11, color: viviendaUso == 'habitual' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
-                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('🏠', style: TextStyle(fontSize: 20)),
+                        const SizedBox(height: 8),
+                        const Text('Vivienda Habitual', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('Aplica bonificaciones ITP/AJD', style: TextStyle(fontSize: 10, color: viviendaUso == 'habitual' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => viviendaUso = 'segunda'),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: viviendaUso == 'segunda' ? const Color(0xFF818CF8) : const Color(0xFF334155),
-                      width: 2,
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => viviendaUso = 'segunda'),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: viviendaUso == 'segunda' ? const Color(0xFF818CF8) : const Color(0xFF334155),
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('🏖️', style: TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      const Text('Segunda Residencia', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('Tipo general sin bonificación', style: TextStyle(fontSize: 11, color: viviendaUso == 'segunda' ? const Color(0xFF818CF8) : const Color(0xFF94A3B8))),
-                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('🏖️', style: TextStyle(fontSize: 20)),
+                        const SizedBox(height: 8),
+                        const Text('Segunda Residencia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('Tipo general sin bonificación', style: TextStyle(fontSize: 10, color: viviendaUso == 'segunda' ? const Color(0xFF818CF8) : const Color(0xFF94A3B8))),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 
         const Text('ESTADO DE LA VIVIENDA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => viviendaTipo = 'segunda'),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF334155),
-                      width: 2,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => viviendaTipo = 'segunda'),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF334155),
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('🏷️', style: TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      const Text('Segunda Mano', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('Impuesto de ITP', style: TextStyle(fontSize: 11, color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
-                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('🏷️', style: TextStyle(fontSize: 20)),
+                        const SizedBox(height: 8),
+                        const Text('Segunda Mano', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('Impuesto de ITP', style: TextStyle(fontSize: 10, color: viviendaTipo == 'segunda' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => viviendaTipo = 'nueva'),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF334155),
-                      width: 2,
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => viviendaTipo = 'nueva'),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF334155),
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('🏗️', style: TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      const Text('Obra Nueva', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text('IVA 10% + AJD', style: TextStyle(fontSize: 11, color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
-                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('🏗️', style: TextStyle(fontSize: 20)),
+                        const SizedBox(height: 8),
+                        const Text('Obra Nueva', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('IVA 10% + AJD', style: TextStyle(fontSize: 10, color: viviendaTipo == 'nueva' ? const Color(0xFF10B981) : const Color(0xFF94A3B8))),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
 
         if (viviendaUso == 'habitual') ...[
@@ -1346,7 +1368,6 @@ class _WizardScreenState extends State<WizardScreen> {
     );
   }
 
-  // PASO 3 ESPECÍFICO PARA COMPRA AL CONTADO
   Widget _buildStep3Contado() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1686,7 +1707,6 @@ class _WizardScreenState extends State<WizardScreen> {
         Text(widget.modoContado ? 'Gastos e impuestos detallados para tu compra sin hipoteca.' : 'Resultado integral de tu operación de compra.', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
         const SizedBox(height: 20),
 
-        // Cuadro 1: Desglose de Inversión
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1734,7 +1754,6 @@ class _WizardScreenState extends State<WizardScreen> {
         const SizedBox(height: 16),
 
         if (!widget.modoContado) ...[
-          // Cuadro 2: Financiación Hipotecaria (LTV)
           if (necesitaHipoteca)
             Container(
               padding: const EdgeInsets.all(16),
@@ -1838,7 +1857,6 @@ class _WizardScreenState extends State<WizardScreen> {
             ),
           const SizedBox(height: 16),
 
-          // Cuadro 3: Capacidad de Pago
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1880,7 +1898,6 @@ class _WizardScreenState extends State<WizardScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Tarjeta CTA Bróker
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1890,7 +1907,7 @@ class _WizardScreenState extends State<WizardScreen> {
             ),
             child: Column(
               children: [
-                const Text('¿Quieres conseguir esta hipoteca con mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                const Text('¿Quieres conseguir una hipoteca con las mejores condiciones?', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
                 const SizedBox(height: 6),
                 const Text('Un bróker hipotecario partner puede negociar tu perfil con los bancos sin coste inicial.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                 const SizedBox(height: 12),
