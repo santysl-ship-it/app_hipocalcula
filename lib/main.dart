@@ -261,7 +261,6 @@ class _InformesListScreenState extends State<InformesListScreen> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () {
-                      // Al hacer clic, navega al informe detallado guardado[cite: 19]
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -348,6 +347,10 @@ class InformeDetalleScreen extends StatelessWidget {
     return "Aplicado ITP regional del ${(rate * 100).toStringAsFixed(1)}% según perfil y C.A.";
   }
 
+  String _fmt(double num) {
+    return num.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+  }
+
   @override
   Widget build(BuildContext context) {
     double itpRate = _calcularITPRateLocal();
@@ -356,11 +359,17 @@ class InformeDetalleScreen extends StatelessWidget {
     double inmobiliaria = informe.tieneAgencia ? (informe.precioVivienda * (informe.agenciaPct / 100)) * 1.21 : 0;
     double totalInversion = informe.precioVivienda + impuestos + gastosLegales + inmobiliaria;
 
+    double hipotecaNecesariaEuros = max(0, totalInversion - informe.ahorrosTotal);
+
     bool ratioOk = informe.debtRatio <= 35;
     bool ltvOk = informe.hipotecaPct <= 80;
     double faltaAhorros80 = max(0, (informe.precioVivienda * (informe.hipotecaPct / 100)) - (informe.precioVivienda * 0.80));
 
     Color viabilidadColor = informe.viabilidadTitulo.contains('ALTA') ? const Color(0xFF10B981) : Colors.redAccent;
+    Color ltvColor = ltvOk ? const Color(0xFF10B981) : Colors.amber;
+    Color ratioColor = ratioOk ? const Color(0xFF10B981) : Colors.redAccent;
+
+    const String disclaimerText = "*Estos cálculos son orientativos calculados con los precios medio de mercado y los datos que has introducido.";
 
     return Scaffold(
       appBar: AppBar(
@@ -423,13 +432,13 @@ class InformeDetalleScreen extends StatelessWidget {
                 children: [
                   const Text('DESGLOSE TOTAL DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
                   const SizedBox(height: 12),
-                  _rowDetail('Precio de la vivienda', '${informe.precioVivienda.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €'),
+                  _rowDetail('Precio de la vivienda', '${_fmt(informe.precioVivienda)} €'),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Impuestos (${informe.viviendaTipo == 'segunda' ? 'ITP' : 'IVA+AJD'} ${(itpRate * 100).toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                      Text('${impuestos.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      Text('${_fmt(impuestos)} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -443,58 +452,125 @@ class InformeDetalleScreen extends StatelessWidget {
                     child: Text('ℹ️ ${_obtenerDetalleITPLocal(itpRate)}', style: const TextStyle(fontSize: 10, color: Color(0xFF34D399))),
                   ),
                   const SizedBox(height: 10),
-                  _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${gastosLegales.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF818CF8)),
+                  _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${_fmt(gastosLegales)} €', color: const Color(0xFF818CF8)),
                   if (informe.tieneAgencia) ...[
                     const SizedBox(height: 8),
-                    _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${inmobiliaria.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF06B6D4)),
+                    _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${_fmt(inmobiliaria)} €', color: const Color(0xFF06B6D4)),
                   ],
                   const Divider(height: 20, color: Color(0xFF334155)),
-                  _rowDetail('Inversión Global Necesaria', '${totalInversion.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', isTotal: true),
+                  _rowDetail('Inversión Global Necesaria', '${_fmt(totalInversion)} €', isTotal: true),
+                  const SizedBox(height: 12),
+                  const Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF10B981))),
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            if (informe.necesitaHipoteca)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Financiación Hipotecaria (LTV)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                      Text('${informe.hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                        Text('${informe.hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvOk ? const Color(0xFF10B981) : Colors.amber)),
+                        Text('Inversión Global (${_fmt(totalInversion)} €) - Ahorros (${_fmt(informe.ahorrosTotal)} €) = ${_fmt(hipotecaNecesariaEuros)} €', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                        const SizedBox(height: 4),
+                        Text('Los ${_fmt(hipotecaNecesariaEuros)} € representan el ${informe.hipotecaPct.toInt()}% de financiación necesaria sobre el precio de la vivienda.', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Stack(
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Container(height: 12, decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(6))),
-                        FractionallySizedBox(
-                          widthFactor: (informe.hipotecaPct / 100).clamp(0.0, 1.0),
-                          child: Container(height: 12, decoration: BoxDecoration(color: ltvOk ? const Color(0xFF10B981) : Colors.amber, borderRadius: BorderRadius.circular(6))),
+                        Container(height: 12, decoration: const BoxDecoration(color: Color(0xFF0F172A))),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: (informe.hipotecaPct / 100).clamp(0.0, 1.0),
+                            child: Container(height: 12, decoration: BoxDecoration(color: ltvColor)),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              double markerPosition = constraints.maxWidth * 0.80;
+                              return Stack(
+                                children: [
+                                  Positioned(
+                                    left: markerPosition - 1.5,
+                                    top: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      width: 3,
+                                      color: const Color(0xFFD97706),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                        Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Colors.amber, fontWeight: FontWeight.bold)),
-                        Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                      ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                      Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
+                      Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.amber.withValues(alpha: 0.3)),
                     ),
-                  ],
-                ),
+                    child: Text(
+                      ltvOk
+                          ? '🟢 ¡Zona Óptima! Estás solicitando un ${informe.hipotecaPct.toInt()}%. Te encuentras dentro del 80% que suelen exigir los bancos para concederte sus mejores condiciones y mejores tipos de interés.'
+                          : '🟠 Atención LTV: Estás solicitando un ${informe.hipotecaPct.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar que los bancos te penalicen poniendo un interés más alto (TIN) o rechacen la operación.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: ltvColor,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ltvColor)),
+                ],
               ),
+            ),
             const SizedBox(height: 16),
 
             // Capacidad de Pago
@@ -512,11 +588,32 @@ class InformeDetalleScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('CAPACIDAD DE PAGO (ENDEUDAMIENTO)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                      Text('${informe.debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioOk ? const Color(0xFF10B981) : Colors.redAccent)),
+                      Text('${informe.debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioColor)),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('Cuota hipoteca estimada: ${informe.cuotaEstimada.toInt()} €/mes.', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text('Cuota hipoteca estimada: ${_fmt(informe.cuotaEstimada)} €/mes (calculada con TIN del 3,5% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: ratioOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.redAccent.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      ratioOk
+                          ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.'
+                          : '🔴 Riesgo de Endeudamiento: Tu ratio (${informe.debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ratioColor)),
                 ],
               ),
             ),
@@ -598,8 +695,6 @@ class _WizardScreenState extends State<WizardScreen> {
   bool tieneAgencia = true;
   double agenciaPct = 3.0;
   
-  bool necesitaHipoteca = true;
-  double hipotecaPct = 80.0;
   double ingresosMensuales = 2800;
   double prestamosMensuales = 500;
 
@@ -615,21 +710,22 @@ class _WizardScreenState extends State<WizardScreen> {
     });
   }
 
-  void autoCalcularHipoteca() {
+  String _fmt(double num) {
+    return num.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+  }
+
+  double _calcularHipotecaPctAutomatico() {
     double itpRate = _obtenerITPRate();
     double impuestos = precioVivienda * itpRate;
-    double gastosNotaria = precioVivienda < 150000 ? 1050 : (precioVivienda < 300000 ? 1500 : 2000);
-    double agenciaMonto = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
+    double gastosLegales = 2250;
+    double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
+    double totalGastosCompra = impuestos + gastosLegales + inmobiliaria;
     
-    double totalGastosCompra = impuestos + gastosNotaria + agenciaMonto;
     double dineroUtilParaEntrada = max(0, ahorrosTotal - totalGastosCompra);
     double hipotecaNecesaria = max(0, precioVivienda - dineroUtilParaEntrada);
     
     double pctResult = (hipotecaNecesaria / precioVivienda) * 100;
-    
-    setState(() {
-      hipotecaPct = pctResult.clamp(50.0, 100.0);
-    });
+    return pctResult.clamp(0.0, 100.0);
   }
 
   double _obtenerITPRate() {
@@ -702,7 +798,9 @@ class _WizardScreenState extends State<WizardScreen> {
     double gastosLegales = 2250;
     double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
     double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
-    double hipotecaMonto = necesitaHipoteca ? precioVivienda * (hipotecaPct / 100) : 0;
+    
+    double hipotecaPctAuto = _calcularHipotecaPctAutomatico();
+    double hipotecaMonto = precioVivienda * (hipotecaPctAuto / 100);
     
     double cuotaEstimada = 0;
     if (hipotecaMonto > 0) {
@@ -728,8 +826,8 @@ class _WizardScreenState extends State<WizardScreen> {
       gradoDiscapacidad: gradoDiscapacidad,
       tieneAgencia: tieneAgencia,
       agenciaPct: agenciaPct,
-      necesitaHipoteca: necesitaHipoteca,
-      hipotecaPct: hipotecaPct,
+      necesitaHipoteca: hipotecaMonto > 0,
+      hipotecaPct: hipotecaPctAuto,
       ingresosMensuales: ingresosMensuales,
       prestamosMensuales: prestamosMensuales,
       inversionTotal: totalInversion,
@@ -1068,7 +1166,7 @@ class _WizardScreenState extends State<WizardScreen> {
         TextFormField(
           initialValue: ahorrosTotal.toInt().toString(),
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: '¿CUÁNTO TIENES AHORRADO?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+          decoration: InputDecoration(labelText: '¿CUÁNTO AHORRO QUIERES APORTAR?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           onChanged: (val) => ahorrosTotal = double.tryParse(val) ?? 0,
         ),
@@ -1076,7 +1174,7 @@ class _WizardScreenState extends State<WizardScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.0),
           child: Text(
-            'Total disponible para destinar a la entrada y los gastos de compra.',
+            'Total aportado para destinar a la entrada y los gastos.',
             style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
           ),
         ),
@@ -1198,80 +1296,10 @@ class _WizardScreenState extends State<WizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Financiación e Ingresos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const Text('Ingresos y Préstamos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        const Text('Ajusta los detalles de tu préstamo e ingresos mensuales.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => necesitaHipoteca = true),
-                child: Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: necesitaHipoteca ? const Color(0xFF10B981) : const Color(0xFF334155), width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text('Necesito Hipoteca', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => necesitaHipoteca = false),
-                child: Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: !necesitaHipoteca ? const Color(0xFF10B981) : const Color(0xFF334155), width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text('Compra al Contado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (necesitaHipoteca) ...[
-          const SizedBox(height: 25),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Porcentaje de Hipoteca', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                    Text('${hipotecaPct.toInt()}%', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF10B981))),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: autoCalcularHipoteca,
-                  icon: const Icon(Icons.auto_awesome, size: 16),
-                  label: const Text('¿No sabes qué % necesitas? Calcúlalo según tus ahorros', style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: const Color(0xFF10B981)),
-                ),
-                Slider(
-                  value: hipotecaPct,
-                  min: 0,
-                  max: 100,
-                  divisions: 100,
-                  activeColor: const Color(0xFF10B981),
-                  onChanged: (val) => setState(() => hipotecaPct = val),
-                ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
+        const Text('Indica tus ingresos mensuales y las deudas o préstamos actuales para calcular tu capacidad de pago.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+        const SizedBox(height: 24),
         Row(
           children: [
             Expanded(
@@ -1329,7 +1357,10 @@ class _WizardScreenState extends State<WizardScreen> {
     double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
     double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
 
-    double hipotecaMonto = necesitaHipoteca ? precioVivienda * (hipotecaPct / 100) : 0;
+    double hipotecaPctAuto = _calcularHipotecaPctAutomatico();
+    double hipotecaMonto = precioVivienda * (hipotecaPctAuto / 100);
+    double hipotecaNecesariaEuros = max(0, totalInversion - ahorrosTotal);
+    bool necesitaHipoteca = hipotecaMonto > 0;
     
     double cuotaEstimada = 0;
     if (hipotecaMonto > 0) {
@@ -1342,24 +1373,25 @@ class _WizardScreenState extends State<WizardScreen> {
     double debtRatio = ingresosMensuales > 0 ? (totalDeudas / ingresosMensuales) * 100 : 0;
 
     bool ratioOk = debtRatio <= 35;
-    bool ltvOk = hipotecaPct <= 80;
+    bool ltvOk = hipotecaPctAuto <= 80;
+    double faltaAhorros80 = max(0, (precioVivienda * (hipotecaPctAuto / 100)) - (precioVivienda * 0.80));
 
     String viabilidadTitulo = "VIABILIDAD ALTA";
     Color viabilidadColor = const Color(0xFF10B981);
-    String viabilidadMsg = "🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.";
 
     if (!ratioOk) {
       viabilidadTitulo = "RIESGO ALTO";
       viabilidadColor = Colors.redAccent;
-      viabilidadMsg = "🔴 Riesgo de Endeudamiento: Tu ratio (${debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.";
     } else if (!ltvOk) {
       viabilidadTitulo = "VIABILIDAD MEDIA";
       viabilidadColor = Colors.amber;
-      viabilidadMsg = "🟡 Viabilidad Media: Tu cuota mensual está dentro de tus ingresos, pero al solicitar más del 80% LTV requerirás mayor aportación de ahorros.";
     }
 
+    Color ltvColor = ltvOk ? const Color(0xFF10B981) : Colors.amber;
+    Color ratioColor = ratioOk ? const Color(0xFF10B981) : Colors.redAccent;
+    const String disclaimerText = "*Estos cálculos son orientativos calculados con los precios medio de mercado y los datos que has introducido.";
+
     String detalleItpTexto = _obtenerDetalleITP(itpRate);
-    double faltaAhorros80 = max(0, hipotecaMonto - (precioVivienda * 0.80));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1383,6 +1415,7 @@ class _WizardScreenState extends State<WizardScreen> {
         const Text('Resultado integral de tu operación de compra.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
         const SizedBox(height: 20),
 
+        // Cuadro 1: Desglose de Inversión
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1395,13 +1428,13 @@ class _WizardScreenState extends State<WizardScreen> {
             children: [
               const Text('DESGLOSE TOTAL DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
               const SizedBox(height: 12),
-              _rowDetail('Precio de la vivienda', '${precioVivienda.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €'),
+              _rowDetail('Precio de la vivienda', '${_fmt(precioVivienda)} €'),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Impuestos (${viviendaTipo == 'segunda' ? 'ITP' : 'IVA+AJD'} ${(itpRate * 100).toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                  Text('${impuestos.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                  Text('${_fmt(impuestos)} €', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                 ],
               ),
               const SizedBox(height: 6),
@@ -1415,18 +1448,21 @@ class _WizardScreenState extends State<WizardScreen> {
                 child: Text('ℹ️ $detalleItpTexto', style: const TextStyle(fontSize: 10, color: Color(0xFF34D399))),
               ),
               const SizedBox(height: 10),
-              _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${gastosLegales.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF818CF8)),
+              _rowDetail('Notaría + Reg. + Gestoría + Tasación', '${_fmt(gastosLegales)} €', color: const Color(0xFF818CF8)),
               if (tieneAgencia) ...[
                 const SizedBox(height: 8),
-                _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${inmobiliaria.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', color: const Color(0xFF06B6D4)),
+                _rowDetail('Comisión Inmobiliaria (+21% IVA)', '${_fmt(inmobiliaria)} €', color: const Color(0xFF06B6D4)),
               ],
               const Divider(height: 20, color: Color(0xFF334155)),
-              _rowDetail('Inversión Global Necesaria', '${totalInversion.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} €', isTotal: true),
+              _rowDetail('Inversión Global Necesaria', '${_fmt(totalInversion)} €', isTotal: true),
+              const SizedBox(height: 12),
+              const Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF10B981))),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
+        // Cuadro 2: Financiación Hipotecaria (LTV)
         if (necesitaHipoteca)
           Container(
             padding: const EdgeInsets.all(16),
@@ -1442,33 +1478,99 @@ class _WizardScreenState extends State<WizardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                    Text('${hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvOk ? const Color(0xFF10B981) : Colors.amber)),
+                    Text('${hipotecaPctAuto.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvColor)),
                   ],
                 ),
                 const SizedBox(height: 10),
-                Stack(
-                  children: [
-                    Container(height: 12, decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(6))),
-                    FractionallySizedBox(
-                      widthFactor: (hipotecaPct / 100).clamp(0.0, 1.0),
-                      child: Container(height: 12, decoration: BoxDecoration(color: ltvOk ? const Color(0xFF10B981) : Colors.amber, borderRadius: BorderRadius.circular(6))),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Inversión Global (${_fmt(totalInversion)} €) - Ahorros (${_fmt(ahorrosTotal)} €) = ${_fmt(hipotecaNecesariaEuros)} €', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                      const SizedBox(height: 4),
+                      Text('Los ${_fmt(hipotecaNecesariaEuros)} € representan el ${hipotecaPctAuto.toInt()}% de financiación necesaria sobre el precio de la vivienda.', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(height: 12, decoration: const BoxDecoration(color: Color(0xFF0F172A))),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: (hipotecaPctAuto / 100).clamp(0.0, 1.0),
+                          child: Container(height: 12, decoration: BoxDecoration(color: ltvColor)),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            double markerPosition = constraints.maxWidth * 0.80;
+                            return Stack(
+                              children: [
+                                Positioned(
+                                  left: markerPosition - 1.5,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 3,
+                                    color: const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 6),
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                    Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Colors.amber, fontWeight: FontWeight.bold)),
+                    Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
                     Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.amber.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    ltvOk
+                        ? '🟢 ¡Zona Óptima! Estás solicitando un ${hipotecaPctAuto.toInt()}%. Te encuentras dentro del 80% que suelen exigir los bancos para concederte sus mejores condiciones y mejores tipos de interés.'
+                        : '🟠 Atención LTV: Estás solicitando un ${hipotecaPctAuto.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar que los bancos te penalicen poniendo un interés más alto (TIN) o rechacen la operación.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: ltvColor,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ltvColor)),
               ],
             ),
           ),
         const SizedBox(height: 16),
 
+        // Cuadro 3: Capacidad de Pago
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1483,17 +1585,38 @@ class _WizardScreenState extends State<WizardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('CAPACIDAD DE PAGO (ENDEUDAMIENTO)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
-                  Text('${debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioOk ? const Color(0xFF10B981) : Colors.redAccent)),
+                  Text('${debtRatio.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ratioColor)),
                 ],
               ),
               const SizedBox(height: 6),
-              Text('Cuota hipoteca estimada: ${cuotaEstimada.toInt()} €/mes.', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+              Text('Cuota hipoteca estimada: ${_fmt(cuotaEstimada)} €/mes (calculada con TIN del 3,5% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: ratioOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.redAccent.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  ratioOk
+                      ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.'
+                      : '🔴 Riesgo de Endeudamiento: Tu ratio (${debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(disclaimerText, style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: ratioColor)),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Tarjeta CTA Bróker (Añadida de nuevo en el Paso 6)
+        // Tarjeta CTA Bróker
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
