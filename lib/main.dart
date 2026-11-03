@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+// Modificamos el main para que sea async y espere a cargar los datos
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await cargarInformesDesdeMemoria();
   runApp(const HipoCalculaApp());
 }
 
@@ -49,9 +54,67 @@ class InformeGuardado {
     required this.viabilidadTitulo,
     this.esContado = false,
   });
+
+  Map<String, dynamic> toJson() => {
+        'fecha': fecha,
+        'comunidad': comunidad,
+        'precioVivienda': precioVivienda,
+        'ahorrosTotal': ahorrosTotal,
+        'viviendaTipo': viviendaTipo,
+        'viviendaUso': viviendaUso,
+        'perfilComprador': perfilComprador,
+        'gradoDiscapacidad': gradoDiscapacidad,
+        'tieneAgencia': tieneAgencia,
+        'agenciaPct': agenciaPct,
+        'necesitaHipoteca': necesitaHipoteca,
+        'hipotecaPct': hipotecaPct,
+        'ingresosMensuales': ingresosMensuales,
+        'prestamosMensuales': prestamosMensuales,
+        'inversionTotal': inversionTotal,
+        'cuotaEstimada': cuotaEstimada,
+        'debtRatio': debtRatio,
+        'viabilidadTitulo': viabilidadTitulo,
+        'esContado': esContado,
+      };
+
+  factory InformeGuardado.fromJson(Map<String, dynamic> json) => InformeGuardado(
+        fecha: json['fecha'],
+        comunidad: json['comunidad'],
+        precioVivienda: json['precioVivienda'],
+        ahorrosTotal: json['ahorrosTotal'],
+        viviendaTipo: json['viviendaTipo'],
+        viviendaUso: json['viviendaUso'],
+        perfilComprador: json['perfilComprador'],
+        gradoDiscapacidad: json['gradoDiscapacidad'],
+        tieneAgencia: json['tieneAgencia'],
+        agenciaPct: json['agenciaPct'],
+        necesitaHipoteca: json['necesitaHipoteca'],
+        hipotecaPct: json['hipotecaPct'],
+        ingresosMensuales: json['ingresosMensuales'],
+        prestamosMensuales: json['prestamosMensuales'],
+        inversionTotal: json['inversionTotal'],
+        cuotaEstimada: json['cuotaEstimada'],
+        debtRatio: json['debtRatio'],
+        viabilidadTitulo: json['viabilidadTitulo'],
+        esContado: json['esContado'] ?? false,
+      );
 }
 
 List<InformeGuardado> globalInformesGuardados = [];
+
+Future<void> guardarInformesEnMemoria() async {
+  final prefs = await SharedPreferences.getInstance();
+  List<String> listaJson = globalInformesGuardados.map((i) => jsonEncode(i.toJson())).toList();
+  await prefs.setStringList('informes_guardados', listaJson);
+}
+
+Future<void> cargarInformesDesdeMemoria() async {
+  final prefs = await SharedPreferences.getInstance();
+  List<String>? listaJson = prefs.getStringList('informes_guardados');
+  if (listaJson != null) {
+    globalInformesGuardados = listaJson.map((str) => InformeGuardado.fromJson(jsonDecode(str))).toList();
+  }
+}
 
 class HipoCalculaApp extends StatelessWidget {
   const HipoCalculaApp({super.key});
@@ -121,7 +184,6 @@ class HomeScreen extends StatelessWidget {
             const Text('¿Qué deseas hacer hoy?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             
-            // Opcion 1: Hipoteca y gastos
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -161,7 +223,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Opcion 2: Compra al contado
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -201,7 +262,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Opcion 3: Informes
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -342,7 +402,6 @@ class _InformesListScreenState extends State<InformesListScreen> {
                               Text('Inversión total: ${informe.inversionTotal.toInt()} €', style: const TextStyle(fontSize: 12, color: Colors.white70)),
                               Row(
                                 children: [
-                                  // Botón de Modificar (Lápiz)
                                   TextButton.icon(
                                     style: TextButton.styleFrom(foregroundColor: const Color(0xFF38BDF8), padding: EdgeInsets.zero),
                                     icon: const Icon(Icons.edit, size: 16),
@@ -361,22 +420,24 @@ class _InformesListScreenState extends State<InformesListScreen> {
                                     },
                                   ),
                                   const SizedBox(width: 12),
-                                  // Botón de Borrar (Papelera) añadido aquí
                                   TextButton.icon(
                                     style: TextButton.styleFrom(foregroundColor: Colors.redAccent, padding: EdgeInsets.zero),
                                     icon: const Icon(Icons.delete_outline, size: 16),
                                     label: const Text('Borrar', style: TextStyle(fontSize: 12)),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       setState(() {
                                         globalInformesGuardados.removeAt(index);
                                       });
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('🗑️ Informe eliminado correctamente.'),
-                                          backgroundColor: Colors.redAccent,
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
+                                      await guardarInformesEnMemoria();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('🗑️ Informe eliminado correctamente.'),
+                                            backgroundColor: Colors.redAccent,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
                                     },
                                   ),
                                 ],
@@ -530,7 +591,6 @@ class InformeDetalleScreen extends StatelessWidget {
             Text('Guardado el ${informe.fecha} | Región: ${informe.comunidad.toUpperCase()} | Uso: ${informe.viviendaUso == 'habitual' ? 'Vivienda Habitual' : 'Segunda Residencia'}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
             const SizedBox(height: 20),
 
-            // Desglose de Inversión
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -895,7 +955,7 @@ class _WizardScreenState extends State<WizardScreen> {
     return "Aplicado ITP regional del ${(rate * 100).toStringAsFixed(1)}% según perfil y C.A.";
   }
 
-  void guardarInformeActual() {
+  Future<void> guardarInformeActual() async {
     if (widget.informeAEditar == null && globalInformesGuardados.length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -958,14 +1018,18 @@ class _WizardScreenState extends State<WizardScreen> {
       globalInformesGuardados.add(nuevoInforme);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✨ ¡Informe guardado con éxito!'),
-        backgroundColor: Color(0xFF10B981),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    Navigator.popUntil(context, (route) => route.isFirst);
+    await guardarInformesEnMemoria();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✨ ¡Informe guardado y persistido con éxito!'),
+          backgroundColor: Color(0xFF10B981),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
   }
 
   @override
