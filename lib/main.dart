@@ -20,6 +20,8 @@ class InformeGuardado {
   final String viviendaUso; 
   final String perfilComprador;
   final String gradoDiscapacidad;
+  final bool esVpo;
+  final String vpoRegimen;
   final bool tieneAgencia;
   final double agenciaPct;
   final bool necesitaHipoteca;
@@ -42,6 +44,8 @@ class InformeGuardado {
     required this.viviendaUso,
     required this.perfilComprador,
     required this.gradoDiscapacidad,
+    required this.esVpo,
+    required this.vpoRegimen,
     required this.tieneAgencia,
     required this.agenciaPct,
     required this.necesitaHipoteca,
@@ -64,6 +68,8 @@ class InformeGuardado {
         'viviendaUso': viviendaUso,
         'perfilComprador': perfilComprador,
         'gradoDiscapacidad': gradoDiscapacidad,
+        'esVpo': esVpo,
+        'vpoRegimen': vpoRegimen,
         'tieneAgencia': tieneAgencia,
         'agenciaPct': agenciaPct,
         'necesitaHipoteca': necesitaHipoteca,
@@ -78,24 +84,26 @@ class InformeGuardado {
       };
 
   factory InformeGuardado.fromJson(Map<String, dynamic> json) => InformeGuardado(
-        fecha: json['fecha'],
-        comunidad: json['comunidad'],
-        precioVivienda: json['precioVivienda'],
-        ahorrosTotal: json['ahorrosTotal'],
-        viviendaTipo: json['viviendaTipo'],
-        viviendaUso: json['viviendaUso'],
-        perfilComprador: json['perfilComprador'],
-        gradoDiscapacidad: json['gradoDiscapacidad'],
-        tieneAgencia: json['tieneAgencia'],
-        agenciaPct: json['agenciaPct'],
-        necesitaHipoteca: json['necesitaHipoteca'],
-        hipotecaPct: json['hipotecaPct'],
-        ingresosMensuales: json['ingresosMensuales'],
-        prestamosMensuales: json['prestamosMensuales'],
-        inversionTotal: json['inversionTotal'],
-        cuotaEstimada: json['cuotaEstimada'],
-        debtRatio: json['debtRatio'],
-        viabilidadTitulo: json['viabilidadTitulo'],
+        fecha: json['fecha'] ?? '',
+        comunidad: json['comunidad'] ?? 'valencia',
+        precioVivienda: (json['precioVivienda'] ?? 0).toDouble(),
+        ahorrosTotal: (json['ahorrosTotal'] ?? 0).toDouble(),
+        viviendaTipo: json['viviendaTipo'] ?? 'segunda',
+        viviendaUso: json['viviendaUso'] ?? 'habitual',
+        perfilComprador: json['perfilComprador'] ?? 'general',
+        gradoDiscapacidad: json['gradoDiscapacidad'] ?? '33_64',
+        esVpo: json['esVpo'] ?? false,
+        vpoRegimen: json['vpoRegimen'] ?? 'general',
+        tieneAgencia: json['tieneAgencia'] ?? false,
+        agenciaPct: (json['agenciaPct'] ?? 0).toDouble(),
+        necesitaHipoteca: json['necesitaHipoteca'] ?? true,
+        hipotecaPct: (json['hipotecaPct'] ?? 80).toDouble(),
+        ingresosMensuales: (json['ingresosMensuales'] ?? 0).toDouble(),
+        prestamosMensuales: (json['prestamosMensuales'] ?? 0).toDouble(),
+        inversionTotal: (json['inversionTotal'] ?? 0).toDouble(),
+        cuotaEstimada: (json['cuotaEstimada'] ?? 0).toDouble(),
+        debtRatio: (json['debtRatio'] ?? 0).toDouble(),
+        viabilidadTitulo: json['viabilidadTitulo'] ?? '',
         esContado: json['esContado'] ?? false,
       );
 }
@@ -210,9 +218,9 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Hipoteca y gastos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text('Compra con Hipoteca', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                           SizedBox(height: 4),
-                          Text('Calcula tu hipoteca y los gastos correspondientes', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                          Text('Calcula los gastos de la compra de tu vivienda y la viabilidad de tu hipoteca', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                         ],
                       ),
                     ),
@@ -394,7 +402,7 @@ class _InformesListScreenState extends State<InformesListScreen> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text('Región: ${informe.comunidad.toUpperCase()} | ${informe.viviendaUso == 'habitual' ? 'V. Habitual' : 'Segunda Res.'}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                          Text('Región: ${informe.comunidad.toUpperCase()} | ${informe.viviendaUso == 'habitual' ? 'V. Habitual' : 'Segunda Res.'}${informe.esVpo ? ' [VPO]' : ''}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                           const Divider(height: 16, color: Color(0xFF334155)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -464,7 +472,9 @@ class InformeDetalleScreen extends StatelessWidget {
   const InformeDetalleScreen({super.key, required this.informe});
 
   double _calcularITPRateLocal() {
-    if (informe.viviendaTipo == 'nueva') return 0.115;
+    if (informe.viviendaTipo == 'nueva') {
+      return (informe.esVpo && informe.vpoRegimen == 'especial') ? 0.055 : 0.115;
+    }
     
     if (informe.viviendaUso == 'segunda') {
       switch (informe.comunidad) {
@@ -481,12 +491,13 @@ class InformeDetalleScreen extends StatelessWidget {
 
     switch (informe.comunidad) {
       case 'valencia':
+        if (informe.esVpo) return informe.vpoRegimen == 'especial' ? 0.04 : 0.08;
         if (informe.perfilComprador == 'joven') return informe.precioVivienda <= 180000 ? 0.06 : 0.08;
         if (informe.perfilComprador == 'familia_numerosa') return 0.04;
         if (informe.perfilComprador == 'discapacidad') return informe.gradoDiscapacidad == '65_mas' ? 0.03 : 0.04;
         return 0.09;
       case 'madrid':
-        if (informe.perfilComprador == 'joven' || informe.perfilComprador == 'familia_numerosa') return 0.04;
+        if (informe.esVpo || informe.perfilComprador == 'joven' || informe.perfilComprador == 'familia_numerosa') return 0.04;
         if (informe.perfilComprador == 'discapacidad') return 0.04;
         return 0.06;
       case 'andalucia':
@@ -503,8 +514,16 @@ class InformeDetalleScreen extends StatelessWidget {
   }
 
   String _obtenerDetalleITPLocal(double rate) {
-    if (informe.viviendaTipo == 'nueva') return "Obra Nueva: IVA 10% + 1.5% AJD.";
-    if (informe.viviendaUso == 'segunda') return "Segunda Residencia: Tipo general del ${(rate * 100).toStringAsFixed(1)}% sin bonificaciones.";
+    if (informe.viviendaTipo == 'nueva') {
+      return informe.esVpo 
+          ? "Obra Nueva VPO (${informe.vpoRegimen}): IVA reducido / AJD bonificado (${(rate * 100).toStringAsFixed(1)}%)." 
+          : "Obra Nueva: IVA 10% + 1.5% AJD.";
+    }
+    if (informe.viviendaUso == 'segunda') return "Segunda Residencia: Tipo general sin bonificación sobre ITP/AJD.";
+    
+    if (informe.esVpo) {
+      return "Vivienda VPO (${informe.vpoRegimen}): Aplicado tipo bonificado regional del ${(rate * 100).toStringAsFixed(1)}%.";
+    }
     
     if (informe.comunidad == 'valencia' && informe.perfilComprador == 'joven') {
       return informe.precioVivienda <= 180000 
@@ -588,7 +607,7 @@ class InformeDetalleScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text('Guardado el ${informe.fecha} | Región: ${informe.comunidad.toUpperCase()} | Uso: ${informe.viviendaUso == 'habitual' ? 'Vivienda Habitual' : 'Segunda Residencia'}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+            Text('Guardado el ${informe.fecha} | Región: ${informe.comunidad.toUpperCase()} | Uso: ${informe.viviendaUso == 'habitual' ? 'Vivienda Habitual' : 'Segunda Residencia'}${informe.esVpo ? ' [VPO]' : ''}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
             const SizedBox(height: 20),
 
             Container(
@@ -651,7 +670,7 @@ class InformeDetalleScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                        const Text('FINANCIACIÓN HIPOTECARIA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
                         Text('${informe.hipotecaPct.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvColor)),
                       ],
                     ),
@@ -700,7 +719,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       child: Text(
                         ltvOk
                             ? '🟢 ¡Zona Óptima! Estás solicitando un ${informe.hipotecaPct.toInt()}%. Te encuentras dentro del 80% que suelen exigir los bancos para concederte sus mejores condiciones.'
-                            : '🟠 Atención LTV: Estás solicitando un ${informe.hipotecaPct.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar penalizaciones de interés (TIN).',
+                            : '🟠 Atención: Estás solicitando un ${informe.hipotecaPct.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar penalizaciones de interés (TIN).',
                         style: TextStyle(fontSize: 11, color: ltvColor, height: 1.4),
                       ),
                     ),
@@ -771,7 +790,14 @@ class InformeDetalleScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            SizedBox(height: 2),
+                            Text('¡PRÓXIMAMENTE!', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 9, color: Color(0xFF065F46))),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -847,6 +873,8 @@ class _WizardScreenState extends State<WizardScreen> {
       viviendaUso = inf.viviendaUso;
       perfilComprador = inf.perfilComprador;
       gradoDiscapacidad = inf.gradoDiscapacidad;
+      esVpo = inf.esVpo;
+      vpoRegimen = inf.vpoRegimen;
       precioVivienda = inf.precioVivienda;
       ahorrosTotal = inf.ahorrosTotal;
       tieneAgencia = inf.tieneAgencia;
@@ -859,6 +887,8 @@ class _WizardScreenState extends State<WizardScreen> {
       viviendaUso = 'habitual'; 
       perfilComprador = 'joven'; 
       gradoDiscapacidad = '33_64'; 
+      esVpo = false;
+      vpoRegimen = 'general';
       precioVivienda = 180000;
       ahorrosTotal = 45000;
       tieneAgencia = true;
@@ -927,7 +957,7 @@ class _WizardScreenState extends State<WizardScreen> {
         if (perfilComprador == 'discapacidad') return gradoDiscapacidad == '65_mas' ? 0.03 : 0.04;
         return 0.09;
       case 'madrid':
-        if (perfilComprador == 'joven' || perfilComprador == 'familia_numerosa' || esVpo) return 0.04;
+        if (esVpo || perfilComprador == 'joven' || perfilComprador == 'familia_numerosa') return 0.04;
         if (perfilComprador == 'discapacidad') return 0.04;
         return 0.06;
       case 'andalucia':
@@ -944,8 +974,16 @@ class _WizardScreenState extends State<WizardScreen> {
   }
 
   String _obtenerDetalleITP(double rate) {
-    if (viviendaTipo == 'nueva') return "Obra Nueva: IVA 10% + 1.5% AJD.";
-    if (viviendaUso == 'segunda') return "Segunda Residencia: Tipo general del ${(rate * 100).toStringAsFixed(1)}% sin bonificaciones.";
+    if (viviendaTipo == 'nueva') {
+      return esVpo 
+          ? "Obra Nueva VPO (${vpoRegimen}): IVA reducido / AJD bonificado (${(rate * 100).toStringAsFixed(1)}%)." 
+          : "Obra Nueva: IVA 10% + 1.5% AJD.";
+    }
+    if (viviendaUso == 'segunda') return "Segunda Residencia: Tipo general sin bonificación sobre ITP/AJD.";
+    
+    if (esVpo) {
+      return "Vivienda VPO (${vpoRegimen}): Aplicado tipo bonificado regional del ${(rate * 100).toStringAsFixed(1)}%.";
+    }
     
     if (comunidad == 'valencia' && perfilComprador == 'joven') {
       return precioVivienda <= 180000 
@@ -999,6 +1037,8 @@ class _WizardScreenState extends State<WizardScreen> {
       viviendaUso: viviendaUso,
       perfilComprador: perfilComprador,
       gradoDiscapacidad: gradoDiscapacidad,
+      esVpo: esVpo,
+      vpoRegimen: vpoRegimen,
       tieneAgencia: tieneAgencia,
       agenciaPct: agenciaPct,
       necesitaHipoteca: !widget.modoContado && hipotecaMonto > 0,
@@ -1055,7 +1095,7 @@ class _WizardScreenState extends State<WizardScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.modoContado ? 'Compra al contado' : 'Hipoteca y gastos', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                  Text(widget.modoContado ? 'Compra al contado' : 'Compra con Hipoteca', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                   const Text('Asistente Inmobiliario Inteligente', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
                 ],
               ),
@@ -1342,6 +1382,82 @@ class _WizardScreenState extends State<WizardScreen> {
 
         if (viviendaUso == 'habitual') ...[
           const SizedBox(height: 20),
+          const Text('¿ES UNA VIVIENDA DE PROTECCIÓN OFICIAL (VPO)?', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => esVpo = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: esVpo ? const Color(0xFF10B981) : const Color(0xFF334155),
+                        width: 2,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Sí es VPO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: esVpo ? const Color(0xFF10B981) : Colors.white)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => esVpo = false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: !esVpo ? const Color(0xFF10B981) : const Color(0xFF334155),
+                        width: 2,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('No es VPO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: !esVpo ? const Color(0xFF10B981) : Colors.white)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (esVpo) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF10B981)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Régimen de VPO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: vpoRegimen,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    dropdownColor: const Color(0xFF0F172A),
+                    items: const [
+                      DropdownMenuItem(value: 'general', child: Text('Régimen General')),
+                      DropdownMenuItem(value: 'especial', child: Text('Régimen Especial / Promoción Pública')),
+                    ],
+                    onChanged: (val) => setState(() => vpoRegimen = val!),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
           const Text('PERFIL DEL COMPRADOR (BONIFICACIONES)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
@@ -1407,7 +1523,7 @@ class _WizardScreenState extends State<WizardScreen> {
         const SizedBox(height: 24),
         TextFormField(
           initialValue: precioVivienda.toInt().toString(),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(labelText: '¿CUÁNTO CUESTA LA VIVIENDA?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           onChanged: (val) => precioVivienda = double.tryParse(val.replaceAll(',', '.')) ?? 0,
@@ -1415,7 +1531,7 @@ class _WizardScreenState extends State<WizardScreen> {
         const SizedBox(height: 20),
         TextFormField(
           initialValue: ahorrosTotal.toInt().toString(),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(labelText: '¿CUÁNTO AHORRO QUIERES APORTAR?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           onChanged: (val) => ahorrosTotal = double.tryParse(val.replaceAll(',', '.')) ?? 0,
@@ -1442,7 +1558,7 @@ class _WizardScreenState extends State<WizardScreen> {
         const SizedBox(height: 24),
         TextFormField(
           initialValue: precioVivienda.toInt().toString(),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(labelText: '¿CUÁNTO CUESTA LA VIVIENDA?', prefixText: '€ ', filled: true, fillColor: const Color(0xFF1E293B), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           onChanged: (val) => precioVivienda = double.tryParse(val.replaceAll(',', '.')) ?? 0,
@@ -1520,7 +1636,7 @@ class _WizardScreenState extends State<WizardScreen> {
                       Expanded(
                         child: TextFormField(
                           initialValue: agenciaPct.toString(),
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 12)),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           onChanged: (v) => agenciaPct = double.tryParse(v.replaceAll(',', '.')) ?? 0,
@@ -1626,7 +1742,7 @@ class _WizardScreenState extends State<WizardScreen> {
                       Expanded(
                         child: TextFormField(
                           initialValue: agenciaPct.toString(),
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 12)),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           onChanged: (v) => agenciaPct = double.tryParse(v.replaceAll(',', '.')) ?? 0,
@@ -1694,7 +1810,7 @@ class _WizardScreenState extends State<WizardScreen> {
               Expanded(
                 child: TextFormField(
                   initialValue: val.toInt().toString(),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 8)),
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   onChanged: (v) => onChanged(double.tryParse(v.replaceAll(',', '.')) ?? 0),
@@ -1985,7 +2101,14 @@ class _WizardScreenState extends State<WizardScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('👉 Solicitar estudio hipotecario gratuito', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        SizedBox(height: 2),
+                        Text('¡PRÓXIMAMENTE!', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 9, color: Color(0xFF065F46))),
+                      ],
+                    ),
                   ),
                 ),
               ],
