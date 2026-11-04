@@ -757,7 +757,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       ),
                       child: Text(
                         ratioOk
-                            ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.'
+                            ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80%. Cumples los filtros habituales.'
                             : '🔴 Riesgo de Endeudamiento: Tu ratio (${informe.debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
                         style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                       ),
@@ -1948,7 +1948,7 @@ class _WizardScreenState extends State<WizardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('FINANCIACIÓN HIPOTECARIA (LTV)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                      const Text('FINANCIACIÓN HIPOTECARIA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
                       Text('${hipotecaPctAuto.toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ltvColor)),
                     ],
                   ),
@@ -2026,7 +2026,7 @@ class _WizardScreenState extends State<WizardScreen> {
                     child: Text(
                       ltvOk
                           ? '🟢 ¡Zona Óptima! Estás solicitando un ${hipotecaPctAuto.toInt()}%. Te encuentras dentro del 80% que suelen exigir los bancos para concederte sus mejores condiciones.'
-                          : '🟠 Atención LTV: Estás solicitando un ${hipotecaPctAuto.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar penalizaciones de interés (TIN).',
+                          : '🟠 Atención: Estás solicitando un ${hipotecaPctAuto.toInt()}%. Te faltan ${_fmt(faltaAhorros80)} € adicionales de ahorros para llegar al 80% y evitar penalizaciones de interés (TIN).',
                       style: TextStyle(fontSize: 11, color: ltvColor, height: 1.4),
                     ),
                   ),
@@ -2066,7 +2066,7 @@ class _WizardScreenState extends State<WizardScreen> {
                   ),
                   child: Text(
                     ratioOk
-                        ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80% LTV. Cumples los filtros habituales.'
+                        ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes por debajo del 80%. Cumples los filtros habituales.'
                         : '🔴 Riesgo de Endeudamiento: Tu ratio (${debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
                     style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                   ),
