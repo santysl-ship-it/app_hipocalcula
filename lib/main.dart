@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Modificamos el main para que sea async y espere a cargar los datos
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await cargarInformesDesdeMemoria();
@@ -211,7 +210,7 @@ class HomeScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.calculate, color: Color(0xFF10B981), size: 28),
+                      child: const Text('📊', style: TextStyle(fontSize: 24)),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -224,7 +223,7 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 16),
+                    const Text('➔', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16)),
                   ],
                 ),
               ),
@@ -263,7 +262,7 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 16),
+                    const Text('➔', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16)),
                   ],
                 ),
               ),
@@ -289,7 +288,7 @@ class HomeScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.folder_shared, color: Color(0xFF38BDF8), size: 28),
+                      child: const Text('📁', style: TextStyle(fontSize: 24)),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -302,7 +301,7 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 16),
+                    const Text('➔', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16)),
                   ],
                 ),
               ),
@@ -359,7 +358,7 @@ class _InformesListScreenState extends State<InformesListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Icon(Icons.inbox, size: 64, color: Color(0xFF334155)),
+                  Text('📥', style: TextStyle(fontSize: 48)),
                   SizedBox(height: 16),
                   Text('No hay informes guardados todavía', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
                 ],
@@ -412,7 +411,7 @@ class _InformesListScreenState extends State<InformesListScreen> {
                                 children: [
                                   TextButton.icon(
                                     style: TextButton.styleFrom(foregroundColor: const Color(0xFF38BDF8), padding: EdgeInsets.zero),
-                                    icon: const Icon(Icons.edit, size: 16),
+                                    icon: const Text('✏️', style: TextStyle(fontSize: 12)),
                                     label: const Text('Modificar', style: TextStyle(fontSize: 12)),
                                     onPressed: () {
                                       Navigator.push(
@@ -430,7 +429,7 @@ class _InformesListScreenState extends State<InformesListScreen> {
                                   const SizedBox(width: 12),
                                   TextButton.icon(
                                     style: TextButton.styleFrom(foregroundColor: Colors.redAccent, padding: EdgeInsets.zero),
-                                    icon: const Icon(Icons.delete_outline, size: 16),
+                                    icon: const Text('🗑️', style: TextStyle(fontSize: 12)),
                                     label: const Text('Borrar', style: TextStyle(fontSize: 12)),
                                     onPressed: () async {
                                       setState(() {
@@ -757,7 +756,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       ),
                       child: Text(
                         ratioOk
-                            ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes dentro del 80%. Cumples los filtros habituales.'
+                            ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes por debajo del 80%. Cumples los filtros habituales.'
                             : '🔴 Riesgo de Endeudamiento: Tu ratio (${informe.debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
                         style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                       ),
@@ -1162,7 +1161,7 @@ class _WizardScreenState extends State<WizardScreen> {
                 else
                   ElevatedButton.icon(
                     onPressed: guardarInformeActual,
-                    icon: const Icon(Icons.bookmark_add, size: 18),
+                    icon: const Text('💾', style: TextStyle(fontSize: 16)),
                     label: Text(widget.informeAEditar != null ? 'Actualizar informe' : 'Guardar informe', style: const TextStyle(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF38BDF8),
@@ -1646,15 +1645,15 @@ class _WizardScreenState extends State<WizardScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
+                const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 16),
-                    const SizedBox(width: 8),
+                    Text('ℹ️', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Se calculará el porcentaje indicado de comisión al precio total de la vivienda y se le añadirá automáticamente el 21% de IVA correspondiente.',
-                        style: TextStyle(fontSize: 11, color: const Color(0xFF10B981), height: 1.3),
+                        style: TextStyle(fontSize: 11, color: Color(0xFF10B981), height: 1.3),
                       ),
                     ),
                   ],
@@ -1752,15 +1751,15 @@ class _WizardScreenState extends State<WizardScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
+                const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 16),
-                    const SizedBox(width: 8),
+                    Text('ℹ️', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Se calculará el porcentaje indicado de comisión al precio total de la vivienda y se le añadirá automáticamente el 21% de IVA correspondiente.',
-                        style: TextStyle(fontSize: 11, color: const Color(0xFF10B981), height: 1.3),
+                        style: TextStyle(fontSize: 11, color: Color(0xFF10B981), height: 1.3),
                       ),
                     ),
                   ],
