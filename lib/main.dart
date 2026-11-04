@@ -542,7 +542,8 @@ class InformeDetalleScreen extends StatelessWidget {
     double impuestos = informe.precioVivienda * itpRate;
     double gastosLegales = 2250;
     double inmobiliaria = informe.tieneAgencia ? (informe.precioVivienda * (informe.agenciaPct / 100)) * 1.21 : 0;
-    double totalInversion = informe.precioVivienda + impuestos + gastosLegales + inmobiliaria;
+    double totalGastosLocal = impuestos + gastosLegales + inmobiliaria;
+    double totalInversion = informe.precioVivienda + totalGastosLocal;
 
     double hipotecaNecesariaEuros = max(0, totalInversion - informe.ahorrosTotal);
 
@@ -608,6 +609,41 @@ class InformeDetalleScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text('Guardado el ${informe.fecha} | Región: ${informe.comunidad.toUpperCase()} | Uso: ${informe.viviendaUso == 'habitual' ? 'Vivienda Habitual' : 'Segunda Residencia'}${informe.esVpo ? ' [VPO]' : ''}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
             const SizedBox(height: 20),
+
+            // ================= INFORME DE VIABILIDAD RESUMIDO =================
+            const Text('INFORME DE VIABILIDAD RESUMIDO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('DESGLOSE RESUMIDO DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                  const SizedBox(height: 12),
+                  _rowDetail('Precio de la vivienda', '${_fmt(informe.precioVivienda)} €'),
+                  const SizedBox(height: 8),
+                  _rowDetail('Precio total de los gastos', '${_fmt(totalGastosLocal)} €'),
+                  const SizedBox(height: 8),
+                  _rowDetail('Inversión global necesaria', '${_fmt(totalInversion)} €'),
+                  const SizedBox(height: 8),
+                  _rowDetail('Ahorro aportado', '${_fmt(informe.ahorrosTotal)} €', color: const Color(0xFF38BDF8)),
+                  if (!informe.esContado) ...[
+                    const SizedBox(height: 8),
+                    _rowDetail('Financiación hipotecaria necesaria', '${informe.hipotecaPct.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('INFORME DE VIABILIDAD DETALLADO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 10),
 
             Container(
               padding: const EdgeInsets.all(16),
@@ -1008,7 +1044,8 @@ class _WizardScreenState extends State<WizardScreen> {
     double impuestos = precioVivienda * itpRate;
     double gastosLegales = 2250;
     double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
-    double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
+    double totalGastos = impuestos + gastosLegales + inmobiliaria;
+    double totalInversion = precioVivienda + totalGastos;
     
     double hipotecaPctAuto = _calcularHipotecaPctAutomatico();
     double hipotecaMonto = precioVivienda * (hipotecaPctAuto / 100);
@@ -1834,7 +1871,8 @@ class _WizardScreenState extends State<WizardScreen> {
     double impuestos = precioVivienda * itpRate;
     double gastosLegales = 2250;
     double inmobiliaria = tieneAgencia ? (precioVivienda * (agenciaPct / 100)) * 1.21 : 0;
-    double totalInversion = precioVivienda + impuestos + gastosLegales + inmobiliaria;
+    double totalGastos = impuestos + gastosLegales + inmobiliaria;
+    double totalInversion = precioVivienda + totalGastos;
 
     double hipotecaPctAuto = _calcularHipotecaPctAutomatico();
     double hipotecaMonto = precioVivienda * (hipotecaPctAuto / 100);
@@ -1885,6 +1923,41 @@ class _WizardScreenState extends State<WizardScreen> {
         const SizedBox(height: 4),
         Text(widget.modoContado ? 'Gastos e impuestos detallados para tu compra sin hipoteca.' : 'Resultado integral de tu operación de compra.', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
         const SizedBox(height: 20),
+
+        // ================= INFORME DE VIABILIDAD RESUMIDO =================
+        const Text('INFORME DE VIABILIDAD RESUMIDO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 10),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('DESGLOSE RESUMIDO DE LA INVERSIÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              const SizedBox(height: 12),
+              _rowDetail('Precio de la vivienda', '${_fmt(precioVivienda)} €'),
+              const SizedBox(height: 8),
+              _rowDetail('Precio total de los gastos', '${_fmt(totalGastos)} €'),
+              const SizedBox(height: 8),
+              _rowDetail('Inversión global necesaria', '${_fmt(totalInversion)} €'),
+              const SizedBox(height: 8),
+              _rowDetail('Ahorro aportado', '${_fmt(ahorrosTotal)} €', color: const Color(0xFF38BDF8)),
+              if (!widget.modoContado) ...[
+                const SizedBox(height: 8),
+                _rowDetail('Financiación hipotecaria necesaria', '${hipotecaPctAuto.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        const Text('INFORME DE VIABILIDAD DETALLADO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 10),
 
         Container(
           padding: const EdgeInsets.all(16),
