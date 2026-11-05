@@ -28,6 +28,8 @@ class InformeGuardado {
   final double ingresosMensuales;
   final double prestamosMensuales;
   final bool esContado;
+  final bool conoceTin;
+  final double tinValor;
   
   final double inversionTotal;
   final double cuotaEstimada;
@@ -56,6 +58,8 @@ class InformeGuardado {
     required this.debtRatio,
     required this.viabilidadTitulo,
     this.esContado = false,
+    this.conoceTin = false,
+    this.tinValor = 3.5,
   });
 
   Map<String, dynamic> toJson() => {
@@ -80,6 +84,8 @@ class InformeGuardado {
         'debtRatio': debtRatio,
         'viabilidadTitulo': viabilidadTitulo,
         'esContado': esContado,
+        'conoceTin': conoceTin,
+        'tinValor': tinValor,
       };
 
   factory InformeGuardado.fromJson(Map<String, dynamic> json) => InformeGuardado(
@@ -104,6 +110,8 @@ class InformeGuardado {
         debtRatio: (json['debtRatio'] ?? 0).toDouble(),
         viabilidadTitulo: json['viabilidadTitulo'] ?? '',
         esContado: json['esContado'] ?? false,
+        conoceTin: json['conoceTin'] ?? false,
+        tinValor: (json['tinValor'] ?? 3.5).toDouble(),
       );
 }
 
@@ -636,12 +644,15 @@ class InformeDetalleScreen extends StatelessWidget {
                   if (!informe.esContado) ...[
                     const SizedBox(height: 8),
                     _rowDetail('Financiación hipotecaria necesaria', '${informe.hipotecaPct.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                    const SizedBox(height: 8),
+                    _rowDetail('Ratio de endeudamiento', '${informe.debtRatio.toInt()}%', color: ratioColor),
                   ],
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
+            // ================= INFORME DE VIABILIDAD DETALLADO =================
             const Text('INFORME DE VIABILIDAD DETALLADO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 10),
 
@@ -781,7 +792,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text('Cuota hipoteca estimada: ${_fmt(informe.cuotaEstimada)} €/mes (calculada con TIN del 3,5% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    Text('Cuota hipoteca estimada: ${_fmt(informe.cuotaEstimada)} €/mes (calculada con TIN del ${informe.tinValor.toStringAsFixed(1)}% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -792,7 +803,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       ),
                       child: Text(
                         ratioOk
-                            ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes por debajo del 80%. Cumples los filtros habituales.'
+                            ? '🟢 Viabilidad Alta: La cuota estimada mas tus otros gastos no supera el 35% de tus ingresos. Cumples los filtros habituales.'
                             : '🔴 Riesgo de Endeudamiento: Tu ratio (${informe.debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
                         style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                       ),
@@ -897,6 +908,8 @@ class _WizardScreenState extends State<WizardScreen> {
   
   late double ingresosMensuales;
   late double prestamosMensuales;
+  bool conoceTin = false;
+  double tinValor = 3.5;
 
   @override
   void initState() {
@@ -916,6 +929,8 @@ class _WizardScreenState extends State<WizardScreen> {
       agenciaPct = inf.agenciaPct;
       ingresosMensuales = inf.ingresosMensuales;
       prestamosMensuales = inf.prestamosMensuales;
+      conoceTin = inf.conoceTin;
+      tinValor = inf.tinValor;
     } else {
       comunidad = 'valencia';
       viviendaTipo = 'segunda'; 
@@ -930,6 +945,8 @@ class _WizardScreenState extends State<WizardScreen> {
       agenciaPct = 3.0;
       ingresosMensuales = 2800;
       prestamosMensuales = 500;
+      conoceTin = false;
+      tinValor = 3.5;
     }
   }
 
@@ -1050,9 +1067,10 @@ class _WizardScreenState extends State<WizardScreen> {
     double hipotecaPctAuto = _calcularHipotecaPctAutomatico();
     double hipotecaMonto = precioVivienda * (hipotecaPctAuto / 100);
     
+    double tinAplicado = conoceTin ? tinValor : 3.5;
     double cuotaEstimada = 0;
     if (!widget.modoContado && hipotecaMonto > 0) {
-      double r = 0.035 / 12;
+      double r = (tinAplicado / 100) / 12;
       double n = 360;
       cuotaEstimada = hipotecaMonto * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
     }
@@ -1086,6 +1104,8 @@ class _WizardScreenState extends State<WizardScreen> {
       debtRatio: debtRatio,
       viabilidadTitulo: viabilidadTitulo,
       esContado: widget.modoContado,
+      conoceTin: conoceTin,
+      tinValor: tinAplicado,
     );
 
     if (widget.informeAEditar != null && widget.indiceEdicion != null) {
@@ -1828,6 +1848,114 @@ class _WizardScreenState extends State<WizardScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 24),
+        const Text('¿Sabes qué tipo de interés te pide el banco (TIN)?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => conoceTin = true),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: conoceTin ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('Sí', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: conoceTin ? const Color(0xFF10B981) : Colors.white)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => conoceTin = false),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: !conoceTin ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: !conoceTin ? const Color(0xFF10B981) : Colors.white)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (conoceTin) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF10B981)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('TIPO DE INTERÉS NOMINAL (TIN %)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14.0),
+                        child: Text('%', style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      Expanded(
+                        child: TextFormField(
+                          initialValue: tinValor.toString(),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 12)),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          onChanged: (v) => tinValor = double.tryParse(v.replaceAll(',', '.')) ?? 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ℹ️', style: TextStyle(fontSize: 14)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Se calculará con el TIN medio de mercado que será un 3,5%.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1879,9 +2007,10 @@ class _WizardScreenState extends State<WizardScreen> {
     double hipotecaNecesariaEuros = max(0, totalInversion - ahorrosTotal);
     bool necesitaHipoteca = !widget.modoContado && hipotecaMonto > 0;
     
+    double tinAplicado = conoceTin ? tinValor : 3.5;
     double cuotaEstimada = 0;
     if (!widget.modoContado && hipotecaMonto > 0) {
-      double r = 0.035 / 12;
+      double r = (tinAplicado / 100) / 12;
       double n = 360;
       cuotaEstimada = hipotecaMonto * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
     }
@@ -1950,12 +2079,15 @@ class _WizardScreenState extends State<WizardScreen> {
               if (!widget.modoContado) ...[
                 const SizedBox(height: 8),
                 _rowDetail('Financiación hipotecaria necesaria', '${hipotecaPctAuto.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                const SizedBox(height: 8),
+                _rowDetail('Ratio de endeudamiento', '${debtRatio.toInt()}%', color: ratioColor),
               ],
             ],
           ),
         ),
         const SizedBox(height: 24),
 
+        // ================= INFORME DE VIABILIDAD DETALLADO =================
         const Text('INFORME DE VIABILIDAD DETALLADO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 10),
 
@@ -2127,7 +2259,7 @@ class _WizardScreenState extends State<WizardScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text('Cuota hipoteca estimada: ${_fmt(cuotaEstimada)} €/mes (calculada con TIN del 3,5% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                Text('Cuota hipoteca estimada: ${_fmt(cuotaEstimada)} €/mes (calculada con TIN del ${tinAplicado.toStringAsFixed(1)}% a 30 años).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -2138,7 +2270,7 @@ class _WizardScreenState extends State<WizardScreen> {
                   ),
                   child: Text(
                     ratioOk
-                        ? '🟢 Viabilidad Alta: La cuota estimada no supera el 35% de tus ingresos y te mantienes por debajo del 80%. Cumples los filtros habituales.'
+                        ? '🟢 Viabilidad Alta: La cuota estimada mas tus otros gastos no supera el 35% de tus ingresos. Cumples los filtros habituales.'
                         : '🔴 Riesgo de Endeudamiento: Tu ratio (${debtRatio.toInt()}%) supera el 35% recomendado. Los bancos podrían rechazar la operación.',
                     style: TextStyle(fontSize: 11, color: ratioOk ? const Color(0xFF34D399) : Colors.redAccent, height: 1.4),
                   ),
