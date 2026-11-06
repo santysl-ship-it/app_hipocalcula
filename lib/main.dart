@@ -645,6 +645,8 @@ class InformeDetalleScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     _rowDetail('Financiación hipotecaria necesaria', '${informe.hipotecaPct.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
                     const SizedBox(height: 8),
+                    _rowDetail('Cuota de hipoteca mensual', '${_fmt(informe.cuotaEstimada)} €/mes', color: const Color(0xFF38BDF8)),
+                    const SizedBox(height: 8),
                     _rowDetail('Ratio de endeudamiento', '${informe.debtRatio.toInt()}%', color: ratioColor),
                   ],
                 ],
@@ -2079,6 +2081,8 @@ class _WizardScreenState extends State<WizardScreen> {
               if (!widget.modoContado) ...[
                 const SizedBox(height: 8),
                 _rowDetail('Financiación hipotecaria necesaria', '${hipotecaPctAuto.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                const SizedBox(height: 8),
+                _rowDetail('Cuota de hipoteca mensual', '${_fmt(cuotaEstimada)} €/mes', color: const Color(0xFF38BDF8)),
                 const SizedBox(height: 8),
                 _rowDetail('Ratio de endeudamiento', '${debtRatio.toInt()}%', color: ratioColor),
               ],
