@@ -643,7 +643,7 @@ class InformeDetalleScreen extends StatelessWidget {
                   _rowDetail('Ahorro aportado', '${_fmt(informe.ahorrosTotal)} €', color: const Color(0xFF38BDF8)),
                   if (!informe.esContado) ...[
                     const SizedBox(height: 8),
-                    _rowDetail('Financiación hipotecaria necesaria', '${informe.hipotecaPct.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                    _rowDetail('Financiación hipotecaria necesaria', '${informe.hipotecaPct.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: ltvColor),
                     const SizedBox(height: 8),
                     _rowDetail('Cuota de hipoteca mensual', '${_fmt(informe.cuotaEstimada)} €/mes', color: const Color(0xFF38BDF8)),
                     const SizedBox(height: 8),
@@ -710,7 +710,7 @@ class InformeDetalleScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
+                  border: Border.all(color: ltvColor.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,8 +753,37 @@ class InformeDetalleScreen extends StatelessWidget {
                               child: Container(height: 12, decoration: BoxDecoration(color: ltvColor)),
                             ),
                           ),
+                          Positioned.fill(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                double markerPosition = constraints.maxWidth * 0.80;
+                                return Stack(
+                                  children: [
+                                    Positioned(
+                                      left: markerPosition - 1.5,
+                                      top: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        width: 3,
+                                        color: const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('0%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                        Text('⚠️ Límite del 80% mejores condiciones', style: TextStyle(fontSize: 9, color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
+                        Text('100%', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -762,7 +791,7 @@ class InformeDetalleScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.amber.withValues(alpha: 0.3)),
+                        border: Border.all(color: ltvColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         ltvOk
@@ -2080,7 +2109,7 @@ class _WizardScreenState extends State<WizardScreen> {
               _rowDetail('Ahorro aportado', '${_fmt(ahorrosTotal)} €', color: const Color(0xFF38BDF8)),
               if (!widget.modoContado) ...[
                 const SizedBox(height: 8),
-                _rowDetail('Financiación hipotecaria necesaria', '${hipotecaPctAuto.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: const Color(0xFF10B981)),
+                _rowDetail('Financiación hipotecaria necesaria', '${hipotecaPctAuto.toInt()}% (${_fmt(hipotecaNecesariaEuros)} €)', color: ltvColor),
                 const SizedBox(height: 8),
                 _rowDetail('Cuota de hipoteca mensual', '${_fmt(cuotaEstimada)} €/mes', color: const Color(0xFF38BDF8)),
                 const SizedBox(height: 8),
@@ -2148,7 +2177,7 @@ class _WizardScreenState extends State<WizardScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.5) : Colors.amber.withValues(alpha: 0.5)),
+                border: Border.all(color: ltvColor.withValues(alpha: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2229,7 +2258,7 @@ class _WizardScreenState extends State<WizardScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: ltvOk ? const Color(0xFF10B981).withValues(alpha: 0.3) : Colors.amber.withValues(alpha: 0.3)),
+                      border: Border.all(color: ltvColor.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       ltvOk
